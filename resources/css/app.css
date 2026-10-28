@@ -1,0 +1,145 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        Inter, ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+    --background: #f7f6fc;
+    --foreground: #1e1b2e;
+    --card: #ffffff;
+    --card-foreground: #1e1b2e;
+    --popover: #ffffff;
+    --popover-foreground: #1e1b2e;
+    --primary: #6d28d9;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f3ff;
+    --secondary-foreground: #3b0764;
+    --muted: #f5f3ff;
+    --muted-foreground: #6b6880;
+    --accent: #ede9fe;
+    --accent-foreground: #5b21b6;
+    --destructive: #dc2626;
+    --destructive-foreground: #dc2626;
+    --border: #e9e5f5;
+    --input: #dcd5f0;
+    --ring: #a78bfa;
+    --chart-1: #6d28d9;
+    --chart-2: #a78bfa;
+    --chart-3: #2563eb;
+    --chart-4: #16a34a;
+    --chart-5: #d97706;
+    --radius: 0.625rem;
+    --sidebar: #3b0764;
+    --sidebar-foreground: #f3eeff;
+    --sidebar-primary: #a78bfa;
+    --sidebar-primary-foreground: #2c0550;
+    --sidebar-accent: rgb(167 139 250 / 0.18);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #4c1d95;
+    --sidebar-ring: #a78bfa;
+    --brand-gradient: linear-gradient(145deg, #3b0764 0%, #6d28d9 100%);
+}
+
+.dark {
+    --background: #12141f;
+    --foreground: #e9e9ed;
+    --card: #1b1e2e;
+    --card-foreground: #e9e9ed;
+    --popover: #1b1e2e;
+    --popover-foreground: #e9e9ed;
+    --primary: #9184d9;
+    --primary-foreground: #15121f;
+    --secondary: #222539;
+    --secondary-foreground: #e9e9ed;
+    --muted: #222539;
+    --muted-foreground: #9e9cb2;
+    --accent: #2a2350;
+    --accent-foreground: #e9e9ed;
+    --destructive: #f87171;
+    --destructive-foreground: #f87171;
+    --border: #2e3145;
+    --input: #3a3e55;
+    --ring: #a78bfa;
+    --chart-1: #9184d9;
+    --chart-2: #a78bfa;
+    --chart-3: #60a5fa;
+    --chart-4: #4ade80;
+    --chart-5: #fbbf24;
+    --sidebar: #0f1120;
+    --sidebar-foreground: #e9e9ed;
+    --sidebar-primary: #a78bfa;
+    --sidebar-primary-foreground: #2c0550;
+    --sidebar-accent: rgb(167 139 250 / 0.18);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #282b3d;
+    --sidebar-ring: #a78bfa;
+    --brand-gradient: linear-gradient(145deg, #0f1120 0%, #3b2a6b 100%);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
