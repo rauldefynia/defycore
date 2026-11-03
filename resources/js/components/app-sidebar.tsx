@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    FileText,
     Landmark,
     LifeBuoy,
     ChartLine,
@@ -27,7 +28,8 @@ import type { NavItem } from '@/types';
 const mainNavItems: NavItem[] = [
     { title: 'Inicio', href: dashboard(), icon: LayoutGrid },
     { title: 'Ventas', href: '', icon: ChartLine },
-    { title: 'Clientes', href: '', icon: Users },
+    { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+    { title: 'Clientes', href: '/clientes', icon: Users },
     { title: 'Soporte', href: '', icon: LifeBuoy },
     { title: 'Finanzas', href: '', icon: Landmark },
     { title: 'Inventario', href: '', icon: Package },
