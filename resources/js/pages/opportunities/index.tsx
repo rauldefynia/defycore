@@ -130,7 +130,9 @@ export default function OpportunitiesIndex({
     opportunities,
     stages,
     clients,
+    isAdmin,
 }: {
+    isAdmin: boolean;
     opportunities: OpportunityCard[];
     stages: Stage[];
     clients: { id: number; name: string }[];
@@ -511,6 +513,14 @@ export default function OpportunitiesIndex({
                                                             {o.client ??
                                                                 'Sin cliente'}
                                                         </span>
+                                                        {isAdmin && o.owner && (
+                                                            <span
+                                                                title="Vendedor"
+                                                                className="bg-secondary text-muted-foreground ml-auto max-w-24 shrink-0 truncate rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                                                            >
+                                                                {o.owner}
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="mt-3 flex items-baseline justify-between gap-2">

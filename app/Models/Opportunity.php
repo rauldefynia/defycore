@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -47,9 +48,16 @@ class Opportunity extends Model
         return $this->hasMany(Quote::class);
     }
 
-    public function isOwnedBy(?User $user): bool
+    /** Administrador, o el vendedor dueño. */
+    public function isAccessibleBy(?User $user): bool
     {
-        return $user !== null && (int) $this->owner_id === (int) $user->getKey();
+        return $user !== null
+            && ($user->isAdmin() || (int) $this->owner_id === (int) $user->getKey());
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $user->isAdmin() ? $query : $query->where('owner_id', $user->getKey());
     }
 
     /** Cotización vigente, o en su defecto la más reciente (requiere `quotes` cargadas). */

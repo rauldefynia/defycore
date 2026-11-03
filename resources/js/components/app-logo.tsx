@@ -1,16 +1,15 @@
-import { usePage } from '@inertiajs/react';
-
 import AppLogoIcon from '@/components/app-logo-icon';
+import BrandLogo from '@/components/brand-logo';
 
+/** Logo del sidebar: completo al expandir, solo el escudo al colapsar. */
 export default function AppLogo() {
-    const { name } = usePage().props;
-
     return (
         <>
-            <AppLogoIcon className="size-7 shrink-0 text-white" />
-            <span className="truncate text-[17px] font-semibold tracking-tight text-white">
-                {name}
-            </span>
+            <BrandLogo
+                variant="onDark"
+                className="h-7 group-data-[collapsible=icon]:hidden"
+            />
+            <AppLogoIcon className="hidden size-7 shrink-0 group-data-[collapsible=icon]:block" />
         </>
     );
 }

@@ -20,8 +20,8 @@ class OpportunityController extends Controller
     public function index(Request $request): Response
     {
         $opportunities = Opportunity::query()
-            ->where('owner_id', $request->user()->id)
-            ->with(['client:id,name', 'quotes'])
+            ->visibleTo($request->user())
+            ->with(['client:id,name', 'owner:id,name', 'quotes'])
             ->orderBy('position')
             ->orderBy('id')
             ->get()
@@ -31,7 +31,8 @@ class OpportunityController extends Controller
         return Inertia::render('opportunities/index', [
             'opportunities' => $opportunities,
             'stages' => $this->stages(),
-            'clients' => Client::orderBy('name')->get(['id', 'name']),
+            'clients' => Client::visibleTo($request->user())->orderBy('name')->get(['id', 'name']),
+            'isAdmin' => $request->user()->isAdmin(),
         ]);
     }
 
@@ -54,7 +55,7 @@ class OpportunityController extends Controller
 
     public function show(Request $request, Opportunity $opportunity): Response
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         $opportunity->load(['client:id,name', 'quotes']);
 
         return Inertia::render('opportunities/show', [
@@ -66,17 +67,17 @@ class OpportunityController extends Controller
                 'lost_reason' => $opportunity->lost_reason,
             ],
             'quotes' => $opportunity->quotes->sortByDesc('id')->values()->map(fn (Quote $q) => $this->quoteRow($q)),
-            'availableQuotes' => Quote::where('seller_id', $request->user()->id)
+            'availableQuotes' => Quote::visibleTo($request->user())
                 ->whereNull('opportunity_id')->latest('id')->get()
                 ->map(fn (Quote $q) => $this->quoteRow($q))->values(),
             'stages' => $this->stages(),
-            'clients' => Client::orderBy('name')->get(['id', 'name']),
+            'clients' => Client::visibleTo($request->user())->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function update(Request $request, Opportunity $opportunity): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         $opportunity->update($this->validated($request));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Oportunidad actualizada.']);
@@ -86,7 +87,7 @@ class OpportunityController extends Controller
 
     public function destroy(Request $request, Opportunity $opportunity): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         // Las cotizaciones se conservan (opportunity_id pasa a null).
         $opportunity->delete();
 
@@ -98,7 +99,7 @@ class OpportunityController extends Controller
     /** Mueve la oportunidad de etapa y/o posición (drag & drop). */
     public function move(Request $request, Opportunity $opportunity): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
 
         $data = $request->validate([
             'stage' => ['required', Rule::in(array_keys(Opportunity::STAGES))],
@@ -110,7 +111,7 @@ class OpportunityController extends Controller
             throw ValidationException::withMessages(['lost_reason' => 'Indica el motivo de la pérdida.']);
         }
 
-        DB::transaction(function () use ($opportunity, $data) {
+        DB::transaction(function () use ($opportunity, $data, $request) {
             $stage = $data['stage'];
             $changed = $opportunity->stage !== $stage;
 
@@ -121,7 +122,7 @@ class OpportunityController extends Controller
             }
             $opportunity->save();
 
-            $ids = Opportunity::where('owner_id', $opportunity->owner_id)
+            $ids = Opportunity::visibleTo($request->user())
                 ->where('stage', $stage)->where('id', '!=', $opportunity->id)
                 ->orderBy('position')->orderBy('id')->pluck('id')->all();
 
@@ -139,11 +140,11 @@ class OpportunityController extends Controller
     /** Anexa una cotización existente a la oportunidad. */
     public function attachQuote(Request $request, Opportunity $opportunity): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         $data = $request->validate(['quote_id' => ['required', 'integer', 'exists:quotes,id']]);
 
         $quote = Quote::findOrFail($data['quote_id']);
-        Gate::allowIf($quote->isOwnedBy($request->user()));
+        Gate::allowIf($quote->isAccessibleBy($request->user()));
 
         $this->attach($opportunity, $quote);
 
@@ -154,7 +155,7 @@ class OpportunityController extends Controller
 
     public function detachQuote(Request $request, Opportunity $opportunity, Quote $quote): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         abort_unless((int) $quote->opportunity_id === $opportunity->id, 404);
 
         $wasActive = $quote->active_with_client;
@@ -173,7 +174,7 @@ class OpportunityController extends Controller
     /** Marca una sola cotización como vigente dentro de la oportunidad (§10.3). */
     public function activateQuote(Request $request, Opportunity $opportunity, Quote $quote): RedirectResponse
     {
-        Gate::allowIf($opportunity->isOwnedBy($request->user()));
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
         abort_unless((int) $quote->opportunity_id === $opportunity->id, 404);
 
         DB::transaction(function () use ($opportunity, $quote) {
@@ -189,7 +190,7 @@ class OpportunityController extends Controller
     /** Convierte una cotización en una oportunidad nueva. */
     public function fromQuote(Request $request, Quote $quote): RedirectResponse
     {
-        Gate::allowIf($quote->isOwnedBy($request->user()));
+        Gate::allowIf($quote->isAccessibleBy($request->user()));
 
         if ($quote->opportunity_id) {
             Inertia::flash('toast', ['type' => 'info', 'message' => 'La cotización ya pertenece a una oportunidad.']);
@@ -230,7 +231,7 @@ class OpportunityController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'client_id' => ['nullable', 'exists:clients,id'],
+            'client_id' => ['nullable', Client::existsRule($request->user())],
             'estimated_amount' => ['nullable', 'numeric', 'min:0'],
             'expected_close_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
@@ -257,6 +258,7 @@ class OpportunityController extends Controller
             'stage' => $o->stage,
             'position' => $o->position,
             'client' => $o->client?->name,
+            'owner' => $o->owner?->name,
             'expected_close_date' => $o->expected_close_date?->toDateString(),
             'quotes_count' => $o->quotes->count(),
             'value' => $o->value(),

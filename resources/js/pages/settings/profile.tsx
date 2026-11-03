@@ -1,8 +1,10 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import AvatarUploader from '@/components/avatar-uploader';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
+import MicrosoftConnection from '@/components/microsoft-connection';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,22 @@ export default function Profile({
             <h1 className="sr-only">Profile settings</h1>
 
             <div className="space-y-6">
+                <Heading
+                    variant="small"
+                    title="Foto de perfil"
+                    description="Se muestra en el panel junto a tu nombre"
+                />
+
+                <AvatarUploader />
+
+                <Heading
+                    variant="small"
+                    title="Microsoft 365"
+                    description="Inicia sesión con tu cuenta de la empresa y envía cotizaciones desde tu correo"
+                />
+
+                <MicrosoftConnection />
+
                 <Heading
                     variant="small"
                     title="Profile"

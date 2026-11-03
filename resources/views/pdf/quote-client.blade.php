@@ -57,7 +57,12 @@
 
 <table class="head">
     <tr>
-        <td><h1>Cotización</h1><div>{{ $quote->name }}</div></td>
+        <td>
+            @if (file_exists(public_path('logo-dark.png')))
+                <img src="{{ public_path('logo-dark.png') }}" style="height:34px;margin-bottom:8px"><br>
+            @endif
+            <h1>Cotización</h1><div>{{ $quote->name }}</div>
+        </td>
         <td class="r"><strong>{{ $quote->number }}</strong><br>Moneda: {{ $currency }}</td>
     </tr>
 </table>

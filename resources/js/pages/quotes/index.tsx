@@ -29,6 +29,7 @@ type QuoteRow = {
     due_date: string | null;
     client: string | null;
     issuer: string | null;
+    seller: string | null;
     opportunity_id: number | null;
     currency: string;
     exchange_rate: number;
@@ -63,7 +64,9 @@ const fmtDate = (d: string | null) =>
 export default function QuotesIndex({
     quotes,
     filters,
+    isAdmin,
 }: {
+    isAdmin: boolean;
     quotes: Paginated<QuoteRow>;
     filters: { search: string };
 }) {
@@ -120,6 +123,9 @@ export default function QuotesIndex({
                                 <th className="px-4 py-3">Folio</th>
                                 <th className="px-4 py-3">Nombre</th>
                                 <th className="px-4 py-3">Cliente</th>
+                                {isAdmin && (
+                                    <th className="px-4 py-3">Vendedor</th>
+                                )}
                                 <th className="px-4 py-3">Fecha</th>
                                 <th className="px-4 py-3">Vence</th>
                                 <th className="px-4 py-3 text-right">Total</th>
@@ -131,7 +137,7 @@ export default function QuotesIndex({
                             {quotes.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={isAdmin ? 9 : 8}
                                         className="text-muted-foreground px-4 py-10 text-center"
                                     >
                                         No hay cotizaciones todavía.
@@ -157,6 +163,11 @@ export default function QuotesIndex({
                                     <td className="px-4 py-3">
                                         {q.client ?? '—'}
                                     </td>
+                                    {isAdmin && (
+                                        <td className="px-4 py-3">
+                                            {q.seller ?? '—'}
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3">
                                         {fmtDate(q.date)}
                                     </td>
@@ -264,7 +275,9 @@ export default function QuotesIndex({
                 onOpenChange={(o) => !o && setSelectedId(null)}
             >
                 <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-                    {selected && <QuoteSummary q={selected} />}
+                    {selected && (
+                        <QuoteSummary q={selected} isAdmin={isAdmin} />
+                    )}
                 </SheetContent>
             </Sheet>
         </>
@@ -282,7 +295,7 @@ function Row({ l, v, strong }: { l: string; v: string; strong?: boolean }) {
     );
 }
 
-function QuoteSummary({ q }: { q: QuoteRow }) {
+function QuoteSummary({ q, isAdmin }: { q: QuoteRow; isAdmin: boolean }) {
     const m = (v: number | null) => formatMoney(v ?? 0, q.currency);
     const qty = (n: number) => String(Number(n.toFixed(2)));
 
@@ -296,6 +309,7 @@ function QuoteSummary({ q }: { q: QuoteRow }) {
             <div className="flex flex-col gap-5 px-4">
                 <dl className="grid gap-1.5">
                     <Row l="Cliente" v={q.client ?? '—'} />
+                    {isAdmin && <Row l="Vendedor" v={q.seller ?? '—'} />}
                     <Row l="Emisor" v={q.issuer ?? '—'} />
                     <Row l="Fecha" v={fmtDate(q.date)} />
                     <Row l="Vence" v={fmtDate(q.due_date)} />

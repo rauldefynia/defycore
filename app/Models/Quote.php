@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -43,10 +44,17 @@ class Quote extends Model
         ];
     }
 
-    /** Compara como enteros: según el driver, el id puede llegar como "1" o 1. */
-    public function isOwnedBy(?User $user): bool
+    /** Administrador, o el vendedor dueño. Se compara como entero: el id puede llegar como "1" o 1. */
+    public function isAccessibleBy(?User $user): bool
     {
-        return $user !== null && (int) $this->seller_id === (int) $user->getKey();
+        return $user !== null
+            && ($user->isAdmin() || (int) $this->seller_id === (int) $user->getKey());
+    }
+
+    /** Cotizaciones que el usuario puede ver: todas (admin) o sólo las suyas. */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $user->isAdmin() ? $query : $query->where('seller_id', $user->getKey());
     }
 
     public static function generateNumber(): string
@@ -65,6 +73,11 @@ class Quote extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuoteItem::class)->orderBy('item_number');
+    }
+
+    public function emails(): HasMany
+    {
+        return $this->hasMany(QuoteEmail::class)->latest('sent_at');
     }
 
     public function opportunity(): BelongsTo

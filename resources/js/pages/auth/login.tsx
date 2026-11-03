@@ -1,5 +1,6 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
+import MicrosoftButton from '@/components/microsoft-button';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
@@ -18,11 +18,26 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const { microsoftEnabled } = usePage<{ microsoftEnabled: boolean }>().props;
+
     return (
         <>
             <Head title="Iniciar sesión" />
 
             <PasskeyVerify />
+
+            {microsoftEnabled && (
+                <div className="mb-6 grid gap-5">
+                    <MicrosoftButton>
+                        Iniciar sesión con Microsoft 365
+                    </MicrosoftButton>
+                    <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                        <span className="bg-border h-px flex-1" />o con tu
+                        correo
+                        <span className="bg-border h-px flex-1" />
+                    </div>
+                </div>
+            )}
 
             <Form
                 {...store.form()}
@@ -95,10 +110,7 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
 
                         <div className="text-muted-foreground text-center text-sm">
-                            ¿Aún no tienes cuenta?{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                Regístrate
-                            </TextLink>
+                            ¿No tienes acceso? Solicítalo a tu administrador.
                         </div>
                     </>
                 )}

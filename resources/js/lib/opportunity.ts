@@ -14,6 +14,7 @@ export type OpportunityCard = {
     stage: StageKey;
     position: number;
     client: string | null;
+    owner: string | null;
     expected_close_date: string | null;
     quotes_count: number;
     value: { amount: number; currency: string; amount_mxn: number };

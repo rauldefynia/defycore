@@ -27,6 +27,9 @@ class QuoteCatalogController extends Controller
             'country' => ['nullable', 'string', 'max:255'],
         ]);
         $data['rfc'] = strtoupper($data['rfc']);
+        // El cliente queda asignado a quien lo da de alta (así un vendedor puede usarlo).
+        $data['seller_id'] = $request->user()->id;
+        $data['seller_name'] = $request->user()->name;
         $data['country'] = $data['country'] ?? 'Mexico';
 
         return response()->json(Client::create($data), 201);

@@ -19,6 +19,8 @@ class AdminUserSeeder extends Seeder
 
         $user->forceFill([
             'name' => env('ADMIN_NAME', 'Administrador'),
+            'role' => 'admin',
+            'active' => true,
             'password' => env('ADMIN_PASSWORD', 'Admin12345!'),
             'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();

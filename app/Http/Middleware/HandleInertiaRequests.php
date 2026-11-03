@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Microsoft\MicrosoftGraph;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -38,6 +39,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            // Muestra u oculta los botones de Microsoft 365 según esté configurado el .env.
+            'microsoftEnabled' => app(MicrosoftGraph::class)->enabled(),
             'auth' => [
                 'user' => $request->user(),
             ],

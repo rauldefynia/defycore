@@ -7,6 +7,7 @@ import {
     FileText,
     Plus,
     Printer,
+    Mail,
     Save,
     Target,
     TriangleAlert,
@@ -33,6 +34,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import QuoteEmailDialog from '@/components/quote-email-dialog';
+import type { SentEmail } from '@/components/quote-email-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -276,8 +279,10 @@ export default function QuoteForm({
     clients: clientsProp,
     issuers: issuersProp,
     opportunities,
+    emails = [],
     defaults,
 }: {
+    emails?: SentEmail[];
     quote: QuoteProp | null;
     clients: Client[];
     issuers: Issuer[];
@@ -295,6 +300,7 @@ export default function QuoteForm({
     const [dialog, setDialog] = useState<
         null | 'client' | 'issuer-new' | 'issuer-edit'
     >(null);
+    const [emailOpen, setEmailOpen] = useState(false);
 
     const [step, setStep] = useState(0);
     // 1 = avanza (entra desde la derecha), -1 = retrocede (entra desde la izquierda)
@@ -578,6 +584,21 @@ export default function QuoteForm({
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                        )}
+                        {quote && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={form.isDirty}
+                                title={
+                                    form.isDirty
+                                        ? 'Guarda los cambios para enviar la cotización'
+                                        : ''
+                                }
+                                onClick={() => setEmailOpen(true)}
+                            >
+                                <Mail /> Enviar por correo
+                            </Button>
                         )}
                         {quote &&
                             (quote.opportunity_id ? (
@@ -1533,6 +1554,20 @@ export default function QuoteForm({
                 </div>
             </form>
 
+            {quote && emailOpen && (
+                <QuoteEmailDialog
+                    open
+                    onClose={() => setEmailOpen(false)}
+                    quote={{
+                        id: quote.id,
+                        number: quote.number,
+                        name: quote.name,
+                        due_date: quote.due_date ?? null,
+                        client_data: quote.client_data ?? null,
+                    }}
+                    history={emails}
+                />
+            )}
             {dialog === 'client' && (
                 <CatalogDialog<Client>
                     open

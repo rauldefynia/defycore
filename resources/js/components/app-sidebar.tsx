@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     FileText,
     Kanban,
@@ -25,20 +25,30 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-// Los módulos aún no tienen ruta: solo se muestra el diseño.
+// Los módulos sin ruta solo muestran el diseño. dminOnly los oculta a los vendedores.
 const mainNavItems: NavItem[] = [
     { title: 'Inicio', href: dashboard(), icon: LayoutGrid },
-    { title: 'Ventas', href: '', icon: ChartLine },
+    { title: 'Ventas', href: '', icon: ChartLine, adminOnly: true },
     { title: 'Oportunidades', href: '/oportunidades', icon: Kanban },
     { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
     { title: 'Clientes', href: '/clientes', icon: Users },
-    { title: 'Soporte', href: '', icon: LifeBuoy },
-    { title: 'Finanzas', href: '', icon: Landmark },
-    { title: 'Inventario', href: '', icon: Package },
-    { title: 'Accesos', href: '', icon: ShieldCheck },
+    { title: 'Soporte', href: '', icon: LifeBuoy, adminOnly: true },
+    { title: 'Finanzas', href: '', icon: Landmark, adminOnly: true },
+    { title: 'Inventario', href: '', icon: Package, adminOnly: true },
+    {
+        title: 'Usuarios',
+        href: '/usuarios',
+        icon: ShieldCheck,
+        adminOnly: true,
+    },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const items = mainNavItems.filter(
+        (i) => !i.adminOnly || auth.user?.role === 'admin',
+    );
+
     return (
         <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader className="border-sidebar-border h-[60px] justify-center border-b">
@@ -54,7 +64,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent className="pt-3">
-                <NavMain items={mainNavItems} />
+                <NavMain items={items} />
             </SidebarContent>
 
             <SidebarFooter className="border-sidebar-border border-t">

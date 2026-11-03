@@ -38,6 +38,9 @@
         $p = fn ($v) => number_format((float) $v, 2).'%';
     @endphp
     <div class="{{ $idx > 0 ? 'break' : '' }}">
+        @if (file_exists(public_path('logo-dark.png')))
+            <img src="{{ public_path('logo-dark.png') }}" style="height:24px;margin-bottom:6px"><br>
+        @endif
         <h1>Calculadora · {{ $quote->number }} — {{ $quote->name }}</h1>
         <div class="meta">
             Vendedor: {{ $quote->seller?->name }} · Fecha: {{ $quote->date?->format('d/m/Y') }}

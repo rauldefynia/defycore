@@ -47,6 +47,28 @@ class ClientTest extends TestCase
         $this->assertSame(0, Client::count());
     }
 
+    public function test_stores_seller_and_reference(): void
+    {
+        $seller = User::factory()->create(['name' => 'Ana López']);
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->post('/clientes', $this->payload([
+            'seller_id' => $seller->id,
+            'reference_contact' => 'Luis Pérez',
+            'reference_email' => 'luis@ref.mx',
+            'reference_phone' => '3312345678',
+        ]))->assertSessionHasNoErrors();
+
+        $c = Client::firstOrFail();
+        $this->assertSame('Ana López', $c->seller_name);
+        $this->assertSame($seller->id, $c->seller_id);
+        $this->assertSame('Luis Pérez', $c->reference_contact);
+        $this->assertSame('3312345678', $c->reference_phone);
+
+        $this->post('/clientes', $this->payload(['rfc' => 'ABC010101AB1', 'reference_email' => 'malo']))
+            ->assertSessionHasErrors('reference_email');
+    }
+
     public function test_validates_rfc_format_and_uniqueness(): void
     {
         $this->actingAs(User::factory()->create());
@@ -65,7 +87,7 @@ class ClientTest extends TestCase
     {
         $user = User::factory()->create();
         $this->actingAs($user);
-        $client = Client::create($this->payload(['rfc' => 'GIM010101AB1']));
+        $client = Client::create($this->payload(['rfc' => 'GIM010101AB1', 'seller_id' => $user->id]));
 
         $this->get('/cotizaciones/nueva')->assertOk()->assertInertia(
             fn ($page) => $page->has('clients', 1)->where('clients.0.name', 'Grupo Industrial Morelos')

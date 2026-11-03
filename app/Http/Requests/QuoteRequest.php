@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Client;
 use App\Services\QuoteCalculator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,11 +25,13 @@ class QuoteRequest extends FormRequest
             'delivery_days_min' => ['nullable', 'integer', 'min:0'],
             'delivery_days_max' => ['nullable', 'integer', 'min:0', 'gte:delivery_days_min'],
             'notes' => ['nullable', 'string'],
-            'client_id' => ['nullable', 'exists:clients,id'],
+            'client_id' => ['nullable', Client::existsRule($this->user())],
             'issuer_id' => ['nullable', 'exists:issuers,id'],
             'opportunity_id' => [
                 'nullable',
-                Rule::exists('opportunities', 'id')->where('owner_id', $this->user()?->id),
+                $this->user()->isAdmin()
+                    ? Rule::exists('opportunities', 'id')
+                    : Rule::exists('opportunities', 'id')->where('owner_id', $this->user()->id),
             ],
 
             'currency' => ['required', Rule::in(QuoteCalculator::CURRENCIES)],

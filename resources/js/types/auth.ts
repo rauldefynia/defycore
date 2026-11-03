@@ -2,7 +2,12 @@ export type User = {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
+    avatar?: string | null;
+    role: 'admin' | 'seller';
+    active: boolean;
+    phone?: string | null;
+    microsoft_connected?: boolean;
+    microsoft_email?: string | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

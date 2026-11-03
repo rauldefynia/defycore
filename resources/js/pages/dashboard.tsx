@@ -1,11 +1,26 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { FilePlus, FileText, UserPlus, Users } from 'lucide-react';
+import {
+    FilePlus,
+    FileText,
+    Kanban,
+    ShieldCheck,
+    UserCog,
+    UserPlus,
+    Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { dashboard } from '@/routes';
 import { formatMoney } from '@/lib/quote-calc';
 
 type Props = {
-    stats: { quotes: number; quotes_month: number; clients: number };
+    stats: {
+        quotes: number;
+        quotes_month: number;
+        clients: number;
+        opportunities_open: number;
+        opportunities_won: number;
+        users: number | null;
+    };
     recentQuotes: {
         id: number;
         number: string;
@@ -42,6 +57,13 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
         live: string;
     }[] = [
         {
+            label: 'Oportunidades',
+            href: '/oportunidades',
+            icon: Kanban,
+            chip: 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
+            live: `${stats.opportunities_open} abiertas · ${stats.opportunities_won} ganadas`,
+        },
+        {
             label: 'Cotizaciones',
             href: '/cotizaciones',
             icon: FileText,
@@ -55,6 +77,18 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
             chip: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
             live: `${stats.clients} clientes registrados`,
         },
+        // Sólo administradores (el servidor envía `users: null` a los vendedores).
+        ...(stats.users !== null
+            ? [
+                  {
+                      label: 'Usuarios',
+                      href: '/usuarios',
+                      icon: ShieldCheck,
+                      chip: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
+                      live: `${stats.users} usuarios activos · administra accesos`,
+                  },
+              ]
+            : []),
     ];
 
     const quickLinks: { label: string; href: string; icon: LucideIcon }[] = [
@@ -64,6 +98,16 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
             icon: FilePlus,
         },
         { label: 'Nuevo cliente', href: '/clientes/nuevo', icon: UserPlus },
+        { label: 'Ver pipeline', href: '/oportunidades', icon: Kanban },
+        ...(stats.users !== null
+            ? [
+                  {
+                      label: 'Nuevo usuario',
+                      href: '/usuarios/nuevo',
+                      icon: UserCog,
+                  },
+              ]
+            : []),
     ];
 
     return (

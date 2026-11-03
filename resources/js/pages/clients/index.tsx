@@ -11,6 +11,7 @@ type ClientRow = {
     contact: string | null;
     email: string | null;
     phone: string | null;
+    seller_name: string | null;
     city: string | null;
     state: string | null;
     quotes_count: number;
@@ -86,6 +87,7 @@ export default function ClientsIndex({
                                 <th className="px-4 py-3">Nombre</th>
                                 <th className="px-4 py-3">RFC</th>
                                 <th className="px-4 py-3">Contacto</th>
+                                <th className="px-4 py-3">Vendedor</th>
                                 <th className="px-4 py-3">Ubicación</th>
                                 <th className="px-4 py-3 text-right">
                                     Cotizaciones
@@ -97,7 +99,7 @@ export default function ClientsIndex({
                             {clients.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="text-muted-foreground px-4 py-10 text-center"
                                     >
                                         No hay clientes todavía.
@@ -125,6 +127,9 @@ export default function ClientsIndex({
                                                 .filter(Boolean)
                                                 .join(' · ')}
                                         </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {c.seller_name ?? '—'}
                                     </td>
                                     <td className="px-4 py-3">
                                         {[c.city, c.state]

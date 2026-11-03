@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(), // Los usuarios los crea un administrador (módulo Usuarios)
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
