@@ -16,6 +16,7 @@ class Quote extends Model
             'date' => 'date:Y-m-d',
             'due_date' => 'date:Y-m-d',
             'first_payment_date' => 'date:Y-m-d',
+            'seller_id' => 'integer',
             'client_data' => 'array',
             'issuer_data' => 'array',
             'payment_schedule' => 'array',
@@ -40,6 +41,12 @@ class Quote extends Model
             'remaining_amount' => 'float',
             'monthly_payment_amount' => 'float',
         ];
+    }
+
+    /** Compara como enteros: según el driver, el id puede llegar como "1" o 1. */
+    public function isOwnedBy(?User $user): bool
+    {
+        return $user !== null && (int) $this->seller_id === (int) $user->getKey();
     }
 
     public static function generateNumber(): string

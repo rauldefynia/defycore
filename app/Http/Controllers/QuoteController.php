@@ -95,7 +95,7 @@ class QuoteController extends Controller
 
     public function edit(Quote $quote): Response
     {
-        Gate::allowIf($quote->seller_id === auth()->id());
+        Gate::allowIf($quote->isOwnedBy(auth()->user()));
         $quote->load('items');
 
         return Inertia::render('quotes/form', [
@@ -107,7 +107,7 @@ class QuoteController extends Controller
 
     public function update(QuoteRequest $request, Quote $quote): RedirectResponse
     {
-        Gate::allowIf($quote->seller_id === $request->user()->id);
+        Gate::allowIf($quote->isOwnedBy($request->user()));
 
         DB::transaction(fn () => $this->persist($quote, $request));
 
@@ -118,7 +118,7 @@ class QuoteController extends Controller
 
     public function destroy(Quote $quote): RedirectResponse
     {
-        Gate::allowIf($quote->seller_id === auth()->id());
+        Gate::allowIf($quote->isOwnedBy(auth()->user()));
         $quote->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cotización eliminada.']);
@@ -129,7 +129,7 @@ class QuoteController extends Controller
     /** Copia la cotización y sus partidas tal cual, sin recalcular (§10.2). */
     public function duplicate(Quote $quote): RedirectResponse
     {
-        Gate::allowIf($quote->seller_id === auth()->id());
+        Gate::allowIf($quote->isOwnedBy(auth()->user()));
 
         $copy = DB::transaction(function () use ($quote) {
             $copy = $quote->replicate();
@@ -153,7 +153,7 @@ class QuoteController extends Controller
     /** PDF interno (calculadora) o de cliente. type: internal | client_mxn | client_usd */
     public function pdf(Request $request, Quote $quote)
     {
-        Gate::allowIf($quote->seller_id === $request->user()->id);
+        Gate::allowIf($quote->isOwnedBy($request->user()));
         $quote->load('items', 'seller');
 
         $type = $request->query('type', 'internal');
