@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\QuoteRequest;
 use App\Models\Client;
 use App\Models\Issuer;
+use App\Models\Opportunity;
 use App\Models\Quote;
 use App\Services\QuoteCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -41,6 +42,7 @@ class QuoteController extends Controller
                 'due_date' => $q->due_date?->toDateString(),
                 'client' => $q->client_data['name'] ?? null,
                 'issuer' => $q->issuer_data['name'] ?? null,
+                'opportunity_id' => $q->opportunity_id,
                 'currency' => $q->currency,
                 'exchange_rate' => $q->exchange_rate,
                 'total' => $q->total,
@@ -76,6 +78,7 @@ class QuoteController extends Controller
             'defaults' => [
                 'date' => now()->toDateString(),
                 'due_date' => now()->addDays(15)->toDateString(),
+                ...$this->opportunityDefaults($request),
             ],
         ]);
     }
@@ -211,8 +214,17 @@ class QuoteController extends Controller
             'client_data' => $clientData,
             'issuer_id' => $issuer?->id,
             'issuer_data' => $issuerData,
+            'opportunity_id' => $data['opportunity_id'] ?? null,
             ...collect($result['quote'])->except('down_payment_warning')->all(),
         ])->save();
+
+        // Al cambiar de oportunidad, la cotización es la vigente sólo si la oportunidad no tiene otra.
+        if ($quote->wasChanged('opportunity_id') || ($quote->wasRecentlyCreated && $quote->opportunity_id)) {
+            $quote->active_with_client = $quote->opportunity_id !== null
+                && ! Quote::where('opportunity_id', $quote->opportunity_id)
+                    ->where('active_with_client', true)->where('id', '!=', $quote->id)->exists();
+            $quote->save();
+        }
 
         $quote->items()->delete();
         $quote->items()->createMany($result['items']);
@@ -226,7 +238,22 @@ class QuoteController extends Controller
         return [
             'clients' => Client::orderBy('name')->get(),
             'issuers' => Issuer::orderBy('name')->get(),
+            'opportunities' => Opportunity::where('owner_id', auth()->id())
+                ->orderBy('name')->get(['id', 'name']),
         ];
+    }
+
+    /** Al crear desde una oportunidad (?opportunity=ID) se heredan oportunidad, cliente y nombre. */
+    private function opportunityDefaults(Request $request): array
+    {
+        $opportunity = Opportunity::where('owner_id', $request->user()->id)
+            ->find($request->query('opportunity'));
+
+        return $opportunity ? [
+            'opportunity_id' => $opportunity->id,
+            'client_id' => $opportunity->client_id,
+            'name' => $opportunity->name,
+        ] : [];
     }
 
     /**

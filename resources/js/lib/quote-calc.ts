@@ -4,16 +4,42 @@
 export const TAX_RATE = 0.16;
 
 export const CURRENCIES = [
-    'MXN', 'USD', 'EUR', 'CAD', 'GBP', 'JPY', 'CHF', 'AUD', 'CNY', 'BRL',
-    'ARS', 'CLP', 'COP', 'PEN', 'GTQ',
+    'MXN',
+    'USD',
+    'EUR',
+    'CAD',
+    'GBP',
+    'JPY',
+    'CHF',
+    'AUD',
+    'CNY',
+    'BRL',
+    'ARS',
+    'CLP',
+    'COP',
+    'PEN',
+    'GTQ',
 ] as const;
 
 const ZERO_DECIMAL = ['JPY', 'CNY', 'ARS', 'CLP', 'COP'];
 const COMMA_DECIMAL = ['EUR', 'CHF', 'ARS', 'CLP', 'COP'];
 
 const SYMBOLS: Record<string, string> = {
-    MXN: '$', USD: 'US$', EUR: '€', CAD: 'CA$', GBP: '£', JPY: '¥', CHF: 'Fr.',
-    AUD: 'A$', CNY: '¥', BRL: 'R$', ARS: '$', CLP: '$', COP: '$', PEN: 'S/', GTQ: 'Q',
+    MXN: '$',
+    USD: 'US$',
+    EUR: '€',
+    CAD: 'CA$',
+    GBP: '£',
+    JPY: '¥',
+    CHF: 'Fr.',
+    AUD: 'A$',
+    CNY: '¥',
+    BRL: 'R$',
+    ARS: '$',
+    CLP: '$',
+    COP: '$',
+    PEN: 'S/',
+    GTQ: 'Q',
 };
 
 export type ItemInput = {
@@ -93,7 +119,9 @@ export function parseNum(raw: unknown): number {
         return Number.isFinite(raw) ? raw : 0;
     }
 
-    let s = String(raw ?? '').trim().replace(/[^\d.,-]/g, '');
+    let s = String(raw ?? '')
+        .trim()
+        .replace(/[^\d.,-]/g, '');
 
     if (s === '') {
         return 0;
@@ -147,8 +175,7 @@ export function calcItem(i: ItemInput): ItemCalc {
         unit_profit: unitProfit,
         unit_margin_percent: saleUnit > 0 ? (unitProfit / saleUnit) * 100 : 0,
         line_profit: lineProfit,
-        line_margin_percent:
-            saleTotal > 0 ? (lineProfit / saleTotal) * 100 : 0,
+        line_margin_percent: saleTotal > 0 ? (lineProfit / saleTotal) * 100 : 0,
     };
 }
 
@@ -231,7 +258,11 @@ export function calcQuote(q: QuoteInput, items: ItemInput[]): QuoteCalc {
     let schedule: ScheduleRow[] = [];
 
     if (q.has_payment_plan) {
-        const months = clamp(Math.trunc(parseNum(q.payment_months)) || 1, 1, 120);
+        const months = clamp(
+            Math.trunc(parseNum(q.payment_months)) || 1,
+            1,
+            120,
+        );
         const fv = Math.max(parseNum(q.first_payment_value), 0);
         firstAmount =
             q.first_payment_type === 'fixed'
@@ -258,13 +289,16 @@ export function calcQuote(q: QuoteInput, items: ItemInput[]): QuoteCalc {
         discountAmount: discount,
         total,
         profit: profit - discount,
-        marginPercent: subtotal > 0 ? ((profit - discount) / subtotal) * 100 : 0,
+        marginPercent:
+            subtotal > 0 ? ((profit - discount) / subtotal) * 100 : 0,
         firstAmount,
         remaining,
         monthly,
         schedule,
         downPaymentWarning:
-            q.has_payment_plan && productsCost > 0 && firstAmount < productsCost,
+            q.has_payment_plan &&
+            productsCost > 0 &&
+            firstAmount < productsCost,
         productsCost,
     };
 }

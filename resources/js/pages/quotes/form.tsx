@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     Check,
     ChevronDown,
@@ -8,6 +8,7 @@ import {
     Plus,
     Printer,
     Save,
+    Target,
     TriangleAlert,
     Trash2,
     Eye,
@@ -274,12 +275,20 @@ export default function QuoteForm({
     quote,
     clients: clientsProp,
     issuers: issuersProp,
+    opportunities,
     defaults,
 }: {
     quote: QuoteProp | null;
     clients: Client[];
     issuers: Issuer[];
-    defaults: { date: string; due_date: string } | null;
+    opportunities: { id: number; name: string }[];
+    defaults: {
+        date: string;
+        due_date: string;
+        opportunity_id?: number;
+        client_id?: number | null;
+        name?: string;
+    } | null;
 }) {
     const [clients, setClients] = useState(clientsProp);
     const [issuers, setIssuers] = useState(issuersProp);
@@ -292,14 +301,23 @@ export default function QuoteForm({
     const [dir, setDir] = useState<1 | -1>(1);
 
     const form = useForm({
-        name: quote?.name ?? '',
+        name: quote?.name ?? defaults?.name ?? '',
+        opportunity_id: quote?.opportunity_id
+            ? String(quote.opportunity_id)
+            : defaults?.opportunity_id
+              ? String(defaults.opportunity_id)
+              : '',
         date: quote?.date ?? defaults?.date ?? '',
         due_date: quote?.due_date ?? defaults?.due_date ?? '',
         delivery_unit: quote?.delivery_unit ?? 'dias',
         delivery_days_min: quote?.delivery_days_min ?? 1,
         delivery_days_max: quote?.delivery_days_max ?? 5,
         notes: quote?.notes ?? '',
-        client_id: quote?.client_id ? String(quote.client_id) : '',
+        client_id: quote?.client_id
+            ? String(quote.client_id)
+            : defaults?.client_id
+              ? String(defaults.client_id)
+              : '',
         issuer_id: quote?.issuer_id ? String(quote.issuer_id) : '',
         currency: quote?.currency ?? 'MXN',
         exchange_rate: quote?.exchange_rate ?? 1,
@@ -561,6 +579,28 @@ export default function QuoteForm({
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
+                        {quote &&
+                            (quote.opportunity_id ? (
+                                <Button type="button" variant="outline" asChild>
+                                    <Link
+                                        href={`/oportunidades/${quote.opportunity_id}`}
+                                    >
+                                        <Target /> Ver oportunidad
+                                    </Link>
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.post(
+                                            `/cotizaciones/${quote.id}/oportunidad`,
+                                        )
+                                    }
+                                >
+                                    <Target /> Convertir en oportunidad
+                                </Button>
+                            ))}
                         <Button type="button" variant="ghost" asChild>
                             <Link href="/cotizaciones">Volver</Link>
                         </Button>
@@ -809,6 +849,33 @@ export default function QuoteForm({
                                         ))}
                                     </select>
                                     <InputError message={err('issuer_id')} />
+                                </div>
+                                <div className="grid gap-2 md:col-span-2">
+                                    <h2 className="text-[15px] font-semibold">
+                                        Oportunidad
+                                    </h2>
+                                    <select
+                                        className={sel}
+                                        value={data.opportunity_id}
+                                        onChange={(e) =>
+                                            setData(
+                                                'opportunity_id',
+                                                e.target.value,
+                                            )
+                                        }
+                                    >
+                                        <option value="">
+                                            — Sin oportunidad —
+                                        </option>
+                                        {opportunities.map((o) => (
+                                            <option key={o.id} value={o.id}>
+                                                {o.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <InputError
+                                        message={err('opportunity_id')}
+                                    />
                                 </div>
                                 <p className="text-muted-foreground text-xs md:col-span-2">
                                     Los datos del cliente y del emisor se copian

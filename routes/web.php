@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\QuoteCatalogController;
 use App\Http\Controllers\QuoteController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,18 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::prefix('oportunidades')->name('opportunities.')->group(function () {
+        Route::get('/', [OpportunityController::class, 'index'])->name('index');
+        Route::post('/', [OpportunityController::class, 'store'])->name('store');
+        Route::get('{opportunity}', [OpportunityController::class, 'show'])->name('show');
+        Route::put('{opportunity}', [OpportunityController::class, 'update'])->name('update');
+        Route::delete('{opportunity}', [OpportunityController::class, 'destroy'])->name('destroy');
+        Route::patch('{opportunity}/mover', [OpportunityController::class, 'move'])->name('move');
+        Route::post('{opportunity}/cotizaciones', [OpportunityController::class, 'attachQuote'])->name('quotes.attach');
+        Route::delete('{opportunity}/cotizaciones/{quote}', [OpportunityController::class, 'detachQuote'])->name('quotes.detach');
+        Route::post('{opportunity}/cotizaciones/{quote}/vigente', [OpportunityController::class, 'activateQuote'])->name('quotes.activate');
+    });
 
     Route::prefix('clientes')->name('clients.')->group(function () {
         Route::get('/', [ClientController::class, 'index'])->name('index');
@@ -32,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{quote}/editar', [QuoteController::class, 'edit'])->name('edit');
         Route::put('{quote}', [QuoteController::class, 'update'])->name('update');
         Route::delete('{quote}', [QuoteController::class, 'destroy'])->name('destroy');
+        Route::post('{quote}/oportunidad', [OpportunityController::class, 'fromQuote'])->name('to-opportunity');
         Route::post('{quote}/duplicar', [QuoteController::class, 'duplicate'])->name('duplicate');
         Route::get('{quote}/pdf', [QuoteController::class, 'pdf'])->name('pdf');
     });

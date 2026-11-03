@@ -26,6 +26,10 @@ class QuoteRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'issuer_id' => ['nullable', 'exists:issuers,id'],
+            'opportunity_id' => [
+                'nullable',
+                Rule::exists('opportunities', 'id')->where('owner_id', $this->user()?->id),
+            ],
 
             'currency' => ['required', Rule::in(QuoteCalculator::CURRENCIES)],
             'exchange_rate' => ['nullable', 'numeric', 'gt:0'],

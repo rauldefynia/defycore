@@ -1,5 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Copy, Eye, FilePlus, Pencil, Search, Trash2 } from 'lucide-react';
+import {
+    Copy,
+    Eye,
+    FilePlus,
+    Pencil,
+    Search,
+    Target,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +29,7 @@ type QuoteRow = {
     due_date: string | null;
     client: string | null;
     issuer: string | null;
+    opportunity_id: number | null;
     currency: string;
     exchange_rate: number;
     total: number;
@@ -179,6 +188,32 @@ export default function QuotesIndex({
                                                 >
                                                     <Pencil />
                                                 </Link>
+                                            </Button>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                title={
+                                                    q.opportunity_id
+                                                        ? 'Ver oportunidad'
+                                                        : 'Convertir en oportunidad'
+                                                }
+                                                onClick={() =>
+                                                    q.opportunity_id
+                                                        ? router.get(
+                                                              `/oportunidades/${q.opportunity_id}`,
+                                                          )
+                                                        : router.post(
+                                                              `/cotizaciones/${q.id}/oportunidad`,
+                                                          )
+                                                }
+                                            >
+                                                <Target
+                                                    className={
+                                                        q.opportunity_id
+                                                            ? 'text-primary'
+                                                            : ''
+                                                    }
+                                                />
                                             </Button>
                                             <Button
                                                 size="icon"
@@ -349,6 +384,19 @@ function QuoteSummary({ q }: { q: QuoteRow }) {
                     }
                 >
                     <Eye /> Vista previa
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() =>
+                        q.opportunity_id
+                            ? router.get(`/oportunidades/${q.opportunity_id}`)
+                            : router.post(`/cotizaciones/${q.id}/oportunidad`)
+                    }
+                >
+                    <Target />
+                    {q.opportunity_id
+                        ? 'Ver oportunidad'
+                        : 'Convertir en oportunidad'}
                 </Button>
             </SheetFooter>
         </>
