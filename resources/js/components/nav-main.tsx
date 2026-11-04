@@ -17,10 +17,12 @@ export function NavMain({ items }: { items: NavItem[] }) {
     return (
         <SidebarGroup className="px-2.5 py-0">
             <SidebarMenu>
-                {items.map((item) => (
+                {items.map((item, i) => (
                     <SidebarMenuItem
                         key={item.title}
                         data-tour={hrefOf(item.href)}
+                        style={{ animationDelay: `${i * 55}ms` }}
+                        className="animate-in fade-in slide-in-from-left-4 fill-mode-backwards duration-500"
                     >
                         {item.href ? (
                             <SidebarMenuButton

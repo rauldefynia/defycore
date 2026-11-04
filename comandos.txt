@@ -1,7 +1,7 @@
 #SUBIR CAMBIOS GITHUB
 
 git add .
-git commit -m "nuevos modulos"
+git commit -m "nuevas vistas mejoradas"
 git push
 
 

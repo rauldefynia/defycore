@@ -9,6 +9,7 @@ import {
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import SidebarGlowLayer from '@/components/sidebar-glow-layer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -39,6 +40,28 @@ const mainNavItems: NavItem[] = [
     { title: 'Bitácora', href: '/bitacora', icon: ScrollText, adminOnly: true },
 ];
 
+/** Guarda la posición del cursor: foco general del menú y brillo de la opción bajo el puntero. */
+function trackPointer(e: React.PointerEvent<HTMLElement>) {
+    const box = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--sx', `${e.clientX - box.left}px`);
+    e.currentTarget.style.setProperty('--sy', `${e.clientY - box.top}px`);
+    e.currentTarget.style.setProperty('--so', '1');
+
+    const btn = (e.target as HTMLElement).closest<HTMLElement>(
+        '[data-slot="sidebar-menu-button"]',
+    );
+
+    if (btn) {
+        const r = btn.getBoundingClientRect();
+        btn.style.setProperty('--bx', `${e.clientX - r.left}px`);
+        btn.style.setProperty('--by', `${e.clientY - r.top}px`);
+    }
+}
+
+function clearPointer(e: React.PointerEvent<HTMLElement>) {
+    e.currentTarget.style.setProperty('--so', '0');
+}
+
 export function AppSidebar() {
     const { auth } = usePage().props;
     const items = mainNavItems.filter(
@@ -46,7 +69,13 @@ export function AppSidebar() {
     );
 
     return (
-        <Sidebar collapsible="icon" variant="sidebar">
+        <Sidebar
+            collapsible="icon"
+            variant="sidebar"
+            onPointerMove={trackPointer}
+            onPointerLeave={clearPointer}
+        >
+            <SidebarGlowLayer />
             <SidebarHeader className="border-sidebar-border h-[60px] justify-center border-b">
                 <SidebarMenu>
                     <SidebarMenuItem>
