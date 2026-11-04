@@ -1,29 +1,20 @@
-import { Link, usePage } from '@inertiajs/react';
-import { FileText, Kanban, ShieldCheck, Users } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 import BrandLogo from '@/components/brand-logo';
 import GlassCard from '@/components/glass-card';
 import InteractiveBackdrop from '@/components/interactive-backdrop';
+import LaptopMockup from '@/components/laptop-mockup';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
-
-const HIGHLIGHTS = [
-    { icon: FileText, label: 'Cotizaciones' },
-    { icon: Kanban, label: 'Pipeline' },
-    { icon: Users, label: 'Clientes y contactos' },
-    { icon: ShieldCheck, label: 'Control por roles' },
-];
 
 export default function AuthSplitLayout({
     children,
     title,
     description,
 }: AuthLayoutProps) {
-    const { name } = usePage().props;
-
     return (
         <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
             <div
-                className="relative hidden flex-col justify-between overflow-hidden p-14 text-white lg:flex"
+                className="relative hidden flex-col overflow-hidden p-10 text-white lg:flex xl:p-14"
                 style={{ background: 'var(--brand-gradient)' }}
             >
                 <InteractiveBackdrop />
@@ -35,32 +26,11 @@ export default function AuthSplitLayout({
                     <BrandLogo variant="onDark" className="h-10" />
                 </Link>
 
-                <div className="pointer-events-none relative max-w-[460px]">
-                    <h1 className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards mb-4 text-[42px] leading-[1.12] font-semibold tracking-tight text-balance delay-150 duration-700">
-                        Todo tu negocio en un solo lugar.
+                <div className="relative flex flex-1 flex-col justify-center gap-8 py-8">
+                    <h1 className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards pointer-events-none max-w-[480px] text-[32px] leading-[1.15] font-semibold tracking-tight text-balance delay-150 duration-700 xl:text-[38px]">
+                        Todo tu proceso de ventas en un solo lugar.
                     </h1>
-                    <p className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards text-base leading-relaxed text-[#ddd3f7] delay-300 duration-700">
-                        Cotiza, da seguimiento a tus oportunidades y mantén a
-                        tus clientes y contactos al alcance, sin hojas de
-                        cálculo sueltas.
-                    </p>
-
-                    <div className="mt-8 flex flex-wrap gap-2.5">
-                        {HIGHLIGHTS.map((h, i) => (
-                            <span
-                                key={h.label}
-                                style={{ animationDelay: `${450 + i * 90}ms` }}
-                                className="animate-in fade-in zoom-in-95 fill-mode-backwards flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium backdrop-blur-md duration-500"
-                            >
-                                <h.icon className="size-3.5" />
-                                {h.label}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="animate-in fade-in pointer-events-none relative text-[13px] text-[#c8b9ee] delay-700 duration-1000">
-                    Mueve el cursor y haz clic sobre el fondo ✦ {String(name)}
+                    <LaptopMockup />
                 </div>
             </div>
 

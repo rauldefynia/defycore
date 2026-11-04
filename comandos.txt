@@ -1,7 +1,7 @@
 #SUBIR CAMBIOS GITHUB
 
 git add .
-git commit -m "graficas y export de pdf"
+git commit -m "mockup login"
 git push
 
 
