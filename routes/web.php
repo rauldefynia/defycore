@@ -9,6 +9,7 @@ use App\Http\Controllers\HeaderController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\QuoteCatalogController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\QuoteMailController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -46,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{user}', [UserController::class, 'update'])->name('update');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy');
     });
+
+    Route::get('graficas', ReportController::class)->name('reports.index');
+    Route::get('graficas/exportar', [ReportController::class, 'export'])->middleware('throttle:20,1')->name('reports.export');
 
     Route::get('bitacora', [ActivityLogController::class, 'index'])
         ->middleware('admin')->name('activity.index');

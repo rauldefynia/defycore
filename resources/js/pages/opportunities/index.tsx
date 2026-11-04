@@ -18,6 +18,7 @@ import InputError from '@/components/input-error';
 import { LostReasonDialog } from '@/components/opportunity-lost-dialog';
 import { Button } from '@/components/ui/button';
 import { useWinCelebration } from '@/components/win-celebration';
+import { playSound } from '@/lib/sound';
 import {
     Dialog,
     DialogContent,
@@ -207,6 +208,18 @@ export default function OpportunitiesIndex({
     ) => {
         const won = items.find((o) => o.id === id);
 
+        if (won && won.stage !== stage) {
+            playSound(
+                stage === 'ganado'
+                    ? 'win'
+                    : stage === 'perdido'
+                      ? 'lose'
+                      : 'drop',
+            );
+        } else {
+            playSound('drop');
+        }
+
         if (stage === 'ganado' && won && won.stage !== 'ganado') {
             celebrate(
                 won.name,
@@ -306,6 +319,11 @@ export default function OpportunitiesIndex({
     const dropProps = (key: StageKey) => ({
         onDragOver: (e: React.DragEvent) => {
             e.preventDefault();
+
+            if (overStage !== key) {
+                playSound('hover');
+            }
+
             setOverStage(key);
             // Los cards detienen la propagación: aquí es zona vacía (al final).
             setOverCard(null);
@@ -345,6 +363,7 @@ export default function OpportunitiesIndex({
                         e.dataTransfer.effectAllowed = 'move';
                         e.dataTransfer.setData('text/plain', String(o.id));
                         setDragId(o.id);
+                        playSound('pick');
                     }}
                     onDragEnd={endDrag}
                     onDragOver={(e) => {

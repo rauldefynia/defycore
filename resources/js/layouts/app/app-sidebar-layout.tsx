@@ -5,12 +5,15 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { AppTour } from '@/components/app-tour';
 import { WelcomeDialog } from '@/components/welcome-dialog';
+import { useSoundEffects } from '@/hooks/use-sound-effects';
 import type { AppLayoutProps } from '@/types';
 
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: AppLayoutProps) {
+    useSoundEffects();
+
     return (
         <AppShell variant="sidebar">
             <AppSidebar />

@@ -40,6 +40,11 @@ const SELLER_STEPS: Step[] = [
         text: 'Directorio de personas (no necesitan ser usuarios). Regístralas una vez y reutilízalas como contacto de oportunidades y de cotizaciones.',
     },
     {
+        target: '/graficas',
+        title: 'Gráficas',
+        text: 'Tablero visual de ventas, cotizaciones y pipeline. Filtra por periodo, vendedor o cliente y compara contra el periodo anterior.',
+    },
+    {
         target: '/cotizaciones',
         title: 'Cotizaciones',
         text: 'Crea cotizaciones por fases, descarga el PDF para tu cliente y envíalo por correo desde tu cuenta de Microsoft 365.',

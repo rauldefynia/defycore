@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BookUser,
+    ChartNoAxesCombined,
     FilePlus,
     FileText,
     Kanban,
@@ -87,6 +88,13 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
             icon: BookUser,
             chip: 'bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400',
             live: `${stats.contacts} contactos · reutilízalos en cotizaciones`,
+        },
+        {
+            label: 'Gráficas',
+            href: '/graficas',
+            icon: ChartNoAxesCombined,
+            chip: 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400',
+            live: 'Ventas, cotizaciones y pipeline con filtros',
         },
         // Sólo administradores (el servidor envía `users: null` a los vendedores).
         ...(stats.users !== null

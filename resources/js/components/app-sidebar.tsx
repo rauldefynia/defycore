@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BadgeDollarSign,
     BookUser,
+    ChartNoAxesCombined,
     FileText,
     Kanban,
     ScrollText,
@@ -11,6 +13,7 @@ import {
 import AppLogo from '@/components/app-logo';
 import SidebarGlowLayer from '@/components/sidebar-glow-layer';
 import { NavMain } from '@/components/nav-main';
+import type { NavEntry } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -22,13 +25,19 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
 
 // Los módulos sin ruta solo muestran el diseño. dminOnly los oculta a los vendedores.
-const mainNavItems: NavItem[] = [
+const mainNavItems: (NavEntry & { adminOnly?: boolean })[] = [
     { title: 'Inicio', href: dashboard(), icon: LayoutGrid },
-    { title: 'Oportunidades', href: '/oportunidades', icon: Kanban },
-    { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+    {
+        title: 'Ventas',
+        icon: BadgeDollarSign,
+        children: [
+            { title: 'Oportunidades', href: '/oportunidades', icon: Kanban },
+            { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+            { title: 'Gráficas', href: '/graficas', icon: ChartNoAxesCombined },
+        ],
+    },
     { title: 'Clientes', href: '/clientes', icon: Users },
     { title: 'Contactos', href: '/contactos', icon: BookUser },
     {

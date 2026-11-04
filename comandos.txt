@@ -1,7 +1,7 @@
 #SUBIR CAMBIOS GITHUB
 
 git add .
-git commit -m "nuevas vistas mejoradas"
+git commit -m "graficas y export de pdf"
 git push
 
 
