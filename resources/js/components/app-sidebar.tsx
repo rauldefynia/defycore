@@ -1,11 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BookUser,
     FileText,
     Kanban,
-    Landmark,
-    LifeBuoy,
-    ChartLine,
-    Package,
+    ScrollText,
     ShieldCheck,
     LayoutGrid,
     Users,
@@ -28,19 +26,17 @@ import type { NavItem } from '@/types';
 // Los módulos sin ruta solo muestran el diseño. dminOnly los oculta a los vendedores.
 const mainNavItems: NavItem[] = [
     { title: 'Inicio', href: dashboard(), icon: LayoutGrid },
-    { title: 'Ventas', href: '', icon: ChartLine, adminOnly: true },
     { title: 'Oportunidades', href: '/oportunidades', icon: Kanban },
     { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
     { title: 'Clientes', href: '/clientes', icon: Users },
-    { title: 'Soporte', href: '', icon: LifeBuoy, adminOnly: true },
-    { title: 'Finanzas', href: '', icon: Landmark, adminOnly: true },
-    { title: 'Inventario', href: '', icon: Package, adminOnly: true },
+    { title: 'Contactos', href: '/contactos', icon: BookUser },
     {
         title: 'Usuarios',
         href: '/usuarios',
         icon: ShieldCheck,
         adminOnly: true,
     },
+    { title: 'Bitácora', href: '/bitacora', icon: ScrollText, adminOnly: true },
 ];
 
 export function AppSidebar() {

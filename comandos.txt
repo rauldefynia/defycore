@@ -1,5 +1,14 @@
 #SUBIR CAMBIOS GITHUB
 
 git add .
-git commit -m "usuarios, pipeline, mejoras"
+git commit -m "nuevos modulos"
 git push
+
+
+
+php artisan optimize:clear
+php artisan route:clear
+php artisan route:cache
+php artisan config:clear
+php artisan config:cache
+php artisan view:clear

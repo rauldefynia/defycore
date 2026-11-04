@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,6 +38,18 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 ])]
 class User extends Authenticatable implements PasskeyUser
 {
+    use LogsActivity;
+
+    public function activitySubject(): string
+    {
+        return 'user';
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name.' ('.$this->email.')';
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
@@ -73,6 +86,11 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Opportunity::class, 'owner_id');
     }
 
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class, 'owner_id');
+    }
+
     public function clients(): HasMany
     {
         return $this->hasMany(Client::class, 'seller_id');
@@ -99,6 +117,7 @@ class User extends Authenticatable implements PasskeyUser
             'microsoft_refresh_token' => 'encrypted',
             'microsoft_token_expires_at' => 'datetime',
             'email_verified_at' => 'datetime',
+            'welcomed_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];

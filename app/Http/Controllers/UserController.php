@@ -105,9 +105,9 @@ class UserController extends Controller
         $this->guardLastAdmin($request, $user, null, false);
 
         // Con historial no se borra (se perdería quién cotizó); se desactiva.
-        if ($user->quotes()->exists() || $user->opportunities()->exists()) {
+        if ($user->quotes()->exists() || $user->opportunities()->exists() || $user->contacts()->exists()) {
             throw ValidationException::withMessages([
-                'user' => 'Este usuario tiene cotizaciones u oportunidades. Desactívalo en lugar de eliminarlo.',
+                'user' => 'Este usuario tiene cotizaciones, oportunidades o contactos. Desactívalo en lugar de eliminarlo.',
             ]);
         }
 

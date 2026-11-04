@@ -3,6 +3,8 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { AppTour } from '@/components/app-tour';
+import { WelcomeDialog } from '@/components/welcome-dialog';
 import type { AppLayoutProps } from '@/types';
 
 export default function AppSidebarLayout({
@@ -20,6 +22,8 @@ export default function AppSidebarLayout({
                     </div>
                 )}
                 {children}
+                <WelcomeDialog />
+                <AppTour />
             </AppContent>
         </AppShell>
     );

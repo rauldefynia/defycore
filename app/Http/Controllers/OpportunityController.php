@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\Quote;
 use Illuminate\Http\RedirectResponse;
@@ -56,7 +58,7 @@ class OpportunityController extends Controller
     public function show(Request $request, Opportunity $opportunity): Response
     {
         Gate::allowIf($opportunity->isAccessibleBy($request->user()));
-        $opportunity->load(['client:id,name', 'quotes']);
+        $opportunity->load(['client:id,name', 'quotes', 'contacts']);
 
         return Inertia::render('opportunities/show', [
             'opportunity' => $this->present($opportunity) + [
@@ -70,9 +72,45 @@ class OpportunityController extends Controller
             'availableQuotes' => Quote::visibleTo($request->user())
                 ->whereNull('opportunity_id')->latest('id')->get()
                 ->map(fn (Quote $q) => $this->quoteRow($q))->values(),
+            'contacts' => $opportunity->contacts->sortBy('name')->values()->map(fn (Contact $c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'position' => $c->position,
+                'email' => $c->email,
+                'phone' => $c->phone ?: $c->mobile,
+                'role' => $c->pivot->role,
+            ]),
             'stages' => $this->stages(),
             'clients' => Client::visibleTo($request->user())->orderBy('name')->get(['id', 'name']),
         ]);
+    }
+
+    public function attachContact(Request $request, Opportunity $opportunity): RedirectResponse
+    {
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
+        $data = $request->validate([
+            'contact_id' => ['required', 'integer', Contact::existsRule($request->user())],
+            'role' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $opportunity->contacts()->syncWithoutDetaching([$data['contact_id'] => ['role' => $data['role'] ?? null]]);
+        ActivityLog::record('updated', 'opportunity', $opportunity->id, $opportunity->name, ['contacto' => ['old' => null, 'new' => Contact::find($data['contact_id'])?->name]]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Contacto anexado.']);
+
+        return back();
+    }
+
+    public function detachContact(Request $request, Opportunity $opportunity, Contact $contact): RedirectResponse
+    {
+        Gate::allowIf($opportunity->isAccessibleBy($request->user()));
+
+        $opportunity->contacts()->detach($contact->id);
+        ActivityLog::record('updated', 'opportunity', $opportunity->id, $opportunity->name, ['contacto' => ['old' => $contact->name, 'new' => null]]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Contacto desanexado.']);
+
+        return back();
     }
 
     public function update(Request $request, Opportunity $opportunity): RedirectResponse

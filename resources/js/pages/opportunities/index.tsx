@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     CalendarDays,
+    CheckCircle2,
     CircleDollarSign,
     FileText,
     GripVertical,
@@ -9,6 +10,7 @@ import {
     Plus,
     Search,
     Trophy,
+    XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -143,7 +145,10 @@ export default function OpportunitiesIndex({
     const [overCard, setOverCard] = useState<number | null>(null);
     const [justDropped, setJustDropped] = useState<number | null>(null);
     const [pendingLost, setPendingLost] = useState<Pending | null>(null);
-    const [creating, setCreating] = useState(false);
+    // /oportunidades?nueva=1 (menú "Crear") abre el diálogo de alta directamente.
+    const [creating, setCreating] = useState(() =>
+        new URLSearchParams(window.location.search).has('nueva'),
+    );
     const [query, setQuery] = useState('');
     const { celebrate, node: celebration } = useWinCelebration();
 
@@ -290,6 +295,160 @@ export default function OpportunitiesIndex({
     const today = new Date().toISOString().slice(0, 10);
     const mxn = (v: number) => formatMoney(v, 'MXN');
 
+    const openStages = stages.filter(
+        (s) => s.key !== 'ganado' && s.key !== 'perdido',
+    );
+    const closedStages = stages.filter(
+        (s) => s.key === 'ganado' || s.key === 'perdido',
+    );
+
+    /** Handlers de soltar compartidos por todas las columnas. */
+    const dropProps = (key: StageKey) => ({
+        onDragOver: (e: React.DragEvent) => {
+            e.preventDefault();
+            setOverStage(key);
+            // Los cards detienen la propagación: aquí es zona vacía (al final).
+            setOverCard(null);
+        },
+        onDragLeave: (e: React.DragEvent) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setOverStage(null);
+                setOverCard(null);
+            }
+        },
+        onDrop: (e: React.DragEvent) => {
+            e.preventDefault();
+            onDrop(key);
+        },
+    });
+
+    const renderCard = (
+        o: OpportunityCard,
+        stage: Stage,
+        variant: 'open' | 'won' | 'lost',
+    ) => {
+        const style = STAGE_STYLES[stage.key];
+        const open = variant === 'open';
+        const overdue =
+            open &&
+            o.expected_close_date !== null &&
+            o.expected_close_date < today;
+        const isOver = overStage === stage.key && dragId !== null;
+        const showGhost = isOver && overCard === o.id && dragId !== o.id;
+
+        return (
+            <div key={o.id} className="flex flex-col gap-2.5">
+                {showGhost && <Ghost />}
+                <article
+                    draggable
+                    onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', String(o.id));
+                        setDragId(o.id);
+                    }}
+                    onDragEnd={endDrag}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOverStage(stage.key);
+                        setOverCard(o.id);
+                    }}
+                    className={`group relative cursor-grab overflow-hidden rounded-xl border p-3 pl-4 transition-all duration-200 active:cursor-grabbing ${
+                        variant === 'won'
+                            ? 'bg-card/90 border-green-500/30 shadow-sm'
+                            : variant === 'lost'
+                              ? 'bg-card/60 border-red-500/20 opacity-75 grayscale-[40%] hover:opacity-100 hover:grayscale-0'
+                              : 'bg-card shadow-sm'
+                    } ${
+                        dragId === o.id
+                            ? 'scale-95 rotate-1 opacity-40'
+                            : 'hover:border-ring/60 hover:-translate-y-0.5 hover:shadow-md'
+                    } ${justDropped === o.id ? `animate-in zoom-in-95 ring-2 duration-300 ${style.ring}` : ''}`}
+                >
+                    <span
+                        className={`absolute inset-y-0 left-0 w-1 ${style.dot}`}
+                    />
+                    <div className="flex items-start gap-2">
+                        {variant === 'won' && (
+                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green-500" />
+                        )}
+                        <Link
+                            href={`/oportunidades/${o.id}`}
+                            draggable={false}
+                            className={`flex-1 text-[13.5px] leading-snug font-semibold hover:underline ${variant === 'lost' ? 'text-muted-foreground line-through decoration-red-400/60' : ''}`}
+                        >
+                            {o.name}
+                        </Link>
+                        <GripVertical className="text-muted-foreground/40 group-hover:text-muted-foreground size-4 shrink-0 transition" />
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2">
+                        <span className="bg-accent text-primary flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                            {initials(o.client)}
+                        </span>
+                        <span className="text-muted-foreground truncate text-xs">
+                            {o.client ?? 'Sin cliente'}
+                        </span>
+                        {isAdmin && o.owner && (
+                            <span
+                                title="Vendedor"
+                                className="bg-secondary text-muted-foreground ml-auto max-w-24 shrink-0 truncate rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                            >
+                                {o.owner}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="mt-2.5 flex items-baseline justify-between gap-2">
+                        <span
+                            className={`text-[15px] font-semibold tracking-tight tabular-nums ${variant === 'won' ? 'text-green-700 dark:text-green-400' : ''} ${variant === 'lost' ? 'text-muted-foreground' : ''}`}
+                        >
+                            {formatMoney(o.value.amount, o.value.currency)}
+                        </span>
+                        <span className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-semibold">
+                            {o.value.currency}
+                        </span>
+                    </div>
+
+                    <div className="text-muted-foreground mt-2.5 flex items-center gap-3 border-t pt-2.5 text-xs">
+                        <span className="flex items-center gap-1">
+                            <FileText className="size-3.5" />
+                            {o.quotes_count}
+                        </span>
+                        {open && o.expected_close_date && (
+                            <span
+                                className={`flex items-center gap-1 ${overdue ? 'font-semibold text-red-600 dark:text-red-400' : ''}`}
+                            >
+                                <CalendarDays className="size-3.5" />
+                                {fmtDate(o.expected_close_date)}
+                                {overdue && ' · vencida'}
+                            </span>
+                        )}
+                        {/* Alternativa al arrastre (táctil / teclado) */}
+                        <select
+                            aria-label="Mover a etapa"
+                            value={o.stage}
+                            onChange={(e) =>
+                                requestMove(
+                                    o.id,
+                                    e.target.value as StageKey,
+                                    null,
+                                )
+                            }
+                            className="text-muted-foreground hover:text-foreground ml-auto max-w-24 cursor-pointer rounded bg-transparent py-0.5 text-[11px] outline-none"
+                        >
+                            {stages.map((s) => (
+                                <option key={s.key} value={s.key}>
+                                    {s.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </article>
+            </div>
+        );
+    };
+
     return (
         <>
             <Head title="Oportunidades" />
@@ -365,230 +524,170 @@ export default function OpportunitiesIndex({
                     />
                 </div>
 
-                <div className="-mx-6 flex gap-3.5 overflow-x-auto px-6 pb-3">
-                    {stages.map((stage, col) => {
-                        const list = byStage[stage.key] ?? [];
-                        const total = list.reduce(
-                            (sum, o) => sum + o.value.amount_mxn,
-                            0,
-                        );
-                        const style = STAGE_STYLES[stage.key];
-                        const isOver =
-                            overStage === stage.key && dragId !== null;
-                        const closedStage =
-                            stage.key === 'ganado' || stage.key === 'perdido';
+                {/* Etapas abiertas en rejilla (caben a 100 % de zoom) + columna de cierre */}
+                <div className="-mx-6 overflow-x-auto px-6 pb-3">
+                    <div className="grid min-w-[1080px] grid-cols-[repeat(4,minmax(210px,1fr))_minmax(250px,0.9fr)] gap-3.5">
+                        {openStages.map((stage, col) => {
+                            const list = byStage[stage.key] ?? [];
+                            const total = list.reduce(
+                                (sum, o) => sum + o.value.amount_mxn,
+                                0,
+                            );
+                            const style = STAGE_STYLES[stage.key];
+                            const isOver =
+                                overStage === stage.key && dragId !== null;
 
-                        return (
-                            <section
-                                key={stage.key}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    setOverStage(stage.key);
-                                    // Los cards detienen la propagación: aquí es zona vacía (al final).
-                                    setOverCard(null);
-                                }}
-                                onDragLeave={(e) => {
-                                    if (
-                                        !e.currentTarget.contains(
-                                            e.relatedTarget as Node,
-                                        )
-                                    ) {
-                                        setOverStage(null);
-                                        setOverCard(null);
-                                    }
-                                }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    onDrop(stage.key);
-                                }}
-                                style={{ animationDelay: `${col * 70}ms` }}
-                                className={`animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards flex max-h-[calc(100vh-330px)] min-h-80 w-[290px] shrink-0 flex-col rounded-2xl border p-2 transition-[background-color,box-shadow] duration-500 ${isOver ? `${style.tint} ring-2 ${style.ring}` : 'bg-secondary/50'}`}
-                            >
-                                <header className="px-2 pt-1.5 pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <span
-                                            className={`size-2.5 rounded-full ${style.dot}`}
-                                        />
-                                        <h2 className="flex-1 text-[13.5px] font-semibold">
-                                            {stage.label}
-                                        </h2>
-                                        <span
-                                            className={`min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums transition-all ${style.chip}`}
-                                        >
-                                            {list.length}
-                                        </span>
-                                        {stage.key === 'oportunidad' && (
-                                            <button
-                                                type="button"
-                                                title="Nueva oportunidad"
-                                                onClick={() =>
-                                                    setCreating(true)
-                                                }
-                                                className="text-muted-foreground hover:bg-card hover:text-primary rounded-md p-1 transition"
+                            return (
+                                <section
+                                    key={stage.key}
+                                    {...dropProps(stage.key)}
+                                    style={{ animationDelay: `${col * 70}ms` }}
+                                    className={`animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards flex max-h-[calc(100vh-330px)] min-h-80 min-w-0 flex-col overflow-hidden rounded-2xl border shadow-sm transition-[background-color,box-shadow] duration-500 ${isOver ? `${style.tint} ring-2 ${style.ring}` : 'bg-secondary/40'}`}
+                                >
+                                    <div className={`h-1 ${style.dot}`} />
+                                    <header className="px-3.5 pt-3 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${style.chip}`}
                                             >
-                                                <Plus className="size-4" />
-                                            </button>
+                                                {col + 1}
+                                            </span>
+                                            <h2 className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">
+                                                {stage.label}
+                                            </h2>
+                                            <span
+                                                className={`min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums ${style.chip}`}
+                                            >
+                                                {list.length}
+                                            </span>
+                                            {stage.key === 'oportunidad' && (
+                                                <button
+                                                    type="button"
+                                                    title="Nueva oportunidad"
+                                                    onClick={() =>
+                                                        setCreating(true)
+                                                    }
+                                                    className="text-muted-foreground hover:bg-card hover:text-primary rounded-md p-1 transition"
+                                                >
+                                                    <Plus className="size-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="text-muted-foreground mt-1.5 text-xs font-medium tabular-nums">
+                                            {mxn(total)}{' '}
+                                            <span className="opacity-60">
+                                                MXN
+                                            </span>
+                                        </div>
+                                        <div className="bg-border mt-2.5 h-[3px] overflow-hidden rounded-full">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-700 ${style.dot}`}
+                                                style={{
+                                                    width: `${items.length ? Math.max((list.length / items.length) * 100, list.length ? 8 : 0) : 0}%`,
+                                                }}
+                                            />
+                                        </div>
+                                    </header>
+
+                                    <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-2.5 pt-0.5 pb-3">
+                                        {list.length === 0 && !isOver && (
+                                            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed py-10 text-xs">
+                                                <Kanban className="size-5 opacity-40" />
+                                                Sin oportunidades
+                                            </div>
+                                        )}
+                                        {list.map((o) =>
+                                            renderCard(o, stage, 'open'),
+                                        )}
+                                        {isOver && overCard === null && (
+                                            <Ghost />
                                         )}
                                     </div>
-                                    <div className="text-muted-foreground mt-1 pl-[18px] text-xs tabular-nums">
-                                        {mxn(total)} MXN
-                                    </div>
-                                    <div className="bg-border mt-2.5 h-[3px] overflow-hidden rounded-full">
-                                        <div
-                                            className={`h-full rounded-full transition-all duration-700 ${style.dot}`}
-                                            style={{
-                                                width: `${items.length ? Math.max((list.length / items.length) * 100, list.length ? 8 : 0) : 0}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </header>
+                                </section>
+                            );
+                        })}
 
-                                <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-0.5 pt-0.5 pb-2">
-                                    {list.length === 0 && !isOver && (
-                                        <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed py-10 text-xs">
-                                            <Kanban className="size-5 opacity-40" />
-                                            Sin oportunidades
-                                        </div>
-                                    )}
+                        {/* Cierre: ganado arriba, perdido abajo */}
+                        <div className="flex max-h-[calc(100vh-330px)] min-h-80 min-w-0 flex-col gap-3.5">
+                            {closedStages.map((stage, i) => {
+                                const won = stage.key === 'ganado';
+                                const list = byStage[stage.key] ?? [];
+                                const total = list.reduce(
+                                    (sum, o) => sum + o.value.amount_mxn,
+                                    0,
+                                );
+                                const style = STAGE_STYLES[stage.key];
+                                const isOver =
+                                    overStage === stage.key && dragId !== null;
+                                const Icon = won ? Trophy : XCircle;
 
-                                    {list.map((o) => {
-                                        const overdue =
-                                            !closedStage &&
-                                            o.expected_close_date !== null &&
-                                            o.expected_close_date < today;
-                                        const showGhost =
-                                            isOver &&
-                                            overCard === o.id &&
-                                            dragId !== o.id;
-
-                                        return (
-                                            <div
-                                                key={o.id}
-                                                className="flex flex-col gap-2.5"
+                                return (
+                                    <section
+                                        key={stage.key}
+                                        {...dropProps(stage.key)}
+                                        style={{
+                                            animationDelay: `${(4 + i) * 70}ms`,
+                                        }}
+                                        className={`animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border transition-[background-color,box-shadow] duration-500 ${
+                                            won
+                                                ? 'border-green-500/40 bg-gradient-to-br from-green-500/20 via-green-500/5 to-transparent shadow-sm shadow-green-500/10'
+                                                : 'border-dashed border-red-500/30 bg-[repeating-linear-gradient(135deg,transparent_0_10px,rgba(239,68,68,0.06)_10px_20px)]'
+                                        } ${isOver ? `ring-2 ${style.ring} ${style.tint}` : ''}`}
+                                    >
+                                        <header className="flex items-center gap-2.5 px-3.5 pt-3 pb-2">
+                                            <span
+                                                className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${
+                                                    won
+                                                        ? 'bg-green-500 text-white shadow-md shadow-green-500/30'
+                                                        : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                                }`}
                                             >
-                                                {showGhost && <Ghost />}
-                                                <article
-                                                    draggable
-                                                    onDragStart={(e) => {
-                                                        e.dataTransfer.effectAllowed =
-                                                            'move';
-                                                        e.dataTransfer.setData(
-                                                            'text/plain',
-                                                            String(o.id),
-                                                        );
-                                                        setDragId(o.id);
-                                                    }}
-                                                    onDragEnd={endDrag}
-                                                    onDragOver={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setOverStage(stage.key);
-                                                        setOverCard(o.id);
-                                                    }}
-                                                    className={`group bg-card relative cursor-grab overflow-hidden rounded-xl border p-3.5 pl-4 shadow-sm transition-all duration-200 active:cursor-grabbing ${
-                                                        dragId === o.id
-                                                            ? 'scale-95 rotate-1 opacity-40'
-                                                            : 'hover:border-ring/60 hover:-translate-y-0.5 hover:shadow-md'
-                                                    } ${justDropped === o.id ? `animate-in zoom-in-95 ring-2 duration-300 ${style.ring}` : ''}`}
+                                                <Icon className="size-4" />
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <h2 className="text-[13.5px] leading-tight font-semibold">
+                                                    {stage.label}
+                                                </h2>
+                                                <div
+                                                    className={`truncate text-xs font-semibold tabular-nums ${won ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}
                                                 >
-                                                    <span
-                                                        className={`absolute inset-y-0 left-0 w-1 ${style.dot}`}
-                                                    />
-                                                    <div className="flex items-start gap-2">
-                                                        <Link
-                                                            href={`/oportunidades/${o.id}`}
-                                                            draggable={false}
-                                                            className={`flex-1 text-[13.5px] leading-snug font-semibold hover:underline ${stage.key === 'perdido' ? 'text-muted-foreground' : ''}`}
-                                                        >
-                                                            {o.name}
-                                                        </Link>
-                                                        <GripVertical className="text-muted-foreground/40 group-hover:text-muted-foreground size-4 shrink-0 transition" />
-                                                    </div>
-
-                                                    <div className="mt-2 flex items-center gap-2">
-                                                        <span className="bg-accent text-primary flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                                                            {initials(o.client)}
-                                                        </span>
-                                                        <span className="text-muted-foreground truncate text-xs">
-                                                            {o.client ??
-                                                                'Sin cliente'}
-                                                        </span>
-                                                        {isAdmin && o.owner && (
-                                                            <span
-                                                                title="Vendedor"
-                                                                className="bg-secondary text-muted-foreground ml-auto max-w-24 shrink-0 truncate rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                                            >
-                                                                {o.owner}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="mt-3 flex items-baseline justify-between gap-2">
-                                                        <span className="text-[15px] font-semibold tracking-tight tabular-nums">
-                                                            {formatMoney(
-                                                                o.value.amount,
-                                                                o.value
-                                                                    .currency,
-                                                            )}
-                                                        </span>
-                                                        <span className="bg-secondary text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-semibold">
-                                                            {o.value.currency}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="text-muted-foreground mt-2.5 flex items-center gap-3 border-t pt-2.5 text-xs">
-                                                        <span className="flex items-center gap-1">
-                                                            <FileText className="size-3.5" />
-                                                            {o.quotes_count}
-                                                        </span>
-                                                        {o.expected_close_date && (
-                                                            <span
-                                                                className={`flex items-center gap-1 ${overdue ? 'font-semibold text-red-600 dark:text-red-400' : ''}`}
-                                                            >
-                                                                <CalendarDays className="size-3.5" />
-                                                                {fmtDate(
-                                                                    o.expected_close_date,
-                                                                )}
-                                                                {overdue &&
-                                                                    ' · vencida'}
-                                                            </span>
-                                                        )}
-                                                        {/* Alternativa al arrastre (táctil / teclado) */}
-                                                        <select
-                                                            aria-label="Mover a etapa"
-                                                            value={o.stage}
-                                                            onChange={(e) =>
-                                                                requestMove(
-                                                                    o.id,
-                                                                    e.target
-                                                                        .value as StageKey,
-                                                                    null,
-                                                                )
-                                                            }
-                                                            className="text-muted-foreground hover:text-foreground ml-auto max-w-24 cursor-pointer rounded bg-transparent py-0.5 text-[11px] outline-none"
-                                                        >
-                                                            {stages.map((s) => (
-                                                                <option
-                                                                    key={s.key}
-                                                                    value={
-                                                                        s.key
-                                                                    }
-                                                                >
-                                                                    {s.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </article>
+                                                    {mxn(total)} MXN
+                                                </div>
                                             </div>
-                                        );
-                                    })}
+                                            <span
+                                                className={`min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums ${style.chip}`}
+                                            >
+                                                {list.length}
+                                            </span>
+                                        </header>
 
-                                    {isOver && overCard === null && <Ghost />}
-                                </div>
-                            </section>
-                        );
-                    })}
+                                        <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2.5 pt-1 pb-2.5">
+                                            {list.length === 0 && !isOver && (
+                                                <div
+                                                    className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-6 text-center text-xs ${won ? 'border-green-500/30 text-green-700/70 dark:text-green-400/70' : 'text-muted-foreground border-red-500/20'}`}
+                                                >
+                                                    <Icon className="size-5 opacity-50" />
+                                                    {won
+                                                        ? 'Arrastra aquí para cerrar como ganada'
+                                                        : 'Arrastra aquí para marcar como perdida'}
+                                                </div>
+                                            )}
+                                            {list.map((o) =>
+                                                renderCard(
+                                                    o,
+                                                    stage,
+                                                    won ? 'won' : 'lost',
+                                                ),
+                                            )}
+                                            {isOver && overCard === null && (
+                                                <Ghost />
+                                            )}
+                                        </div>
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             </div>
 

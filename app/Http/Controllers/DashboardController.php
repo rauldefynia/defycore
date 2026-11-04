@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\Quote;
 use App\Models\User;
@@ -22,11 +24,14 @@ class DashboardController extends Controller
                 'quotes' => (clone $mine)->count(),
                 'quotes_month' => (clone $mine)->where('date', '>=', now()->startOfMonth())->count(),
                 'clients' => Client::visibleTo($user)->count(),
+                'contacts' => Contact::visibleTo($user)->count(),
                 'opportunities_open' => Opportunity::visibleTo($user)
                     ->whereNotIn('stage', Opportunity::CLOSED)->count(),
                 'opportunities_won' => Opportunity::visibleTo($user)->where('stage', 'ganado')->count(),
                 // Sólo el administrador ve el módulo de usuarios.
                 'users' => $user->isAdmin() ? User::where('active', true)->count() : null,
+                // Movimientos de hoy en la bitácora (sólo administrador).
+                'activity_today' => $user->isAdmin() ? ActivityLog::where('created_at', '>=', now()->startOfDay())->count() : null,
             ],
             'recentQuotes' => (clone $mine)->latest('id')->limit(5)->get()
                 ->map(fn (Quote $q) => [

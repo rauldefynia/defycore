@@ -2,13 +2,27 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Opportunity extends Model
 {
+    use LogsActivity;
+
+    public function activitySubject(): string
+    {
+        return 'opportunity';
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
+    }
+
     public const STAGES = [
         'oportunidad' => 'Oportunidad',
         'calificado' => 'Calificado',
@@ -36,6 +50,11 @@ class Opportunity extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function contacts(): BelongsToMany
+    {
+        return $this->belongsToMany(Contact::class)->withPivot('role')->withTimestamps();
     }
 
     public function client(): BelongsTo

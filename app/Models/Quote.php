@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Quote extends Model
 {
+    use LogsActivity;
+
+    public function activitySubject(): string
+    {
+        return 'quote';
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->number.' · '.$this->name;
+    }
+
     protected $guarded = ['id'];
 
     protected function casts(): array
@@ -73,6 +86,11 @@ class Quote extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuoteItem::class)->orderBy('item_number');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     public function emails(): HasMany

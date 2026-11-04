@@ -1,13 +1,17 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Auth\MicrosoftAuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HeaderController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\QuoteCatalogController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteMailController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -21,6 +25,17 @@ Route::get('auth/microsoft/callback', [MicrosoftAuthController::class, 'callback
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('auth/microsoft', [MicrosoftAuthController::class, 'disconnect'])->name('microsoft.disconnect');
 
+    // Barra superior: búsqueda global y notificaciones (JSON).
+    Route::get('buscar', [HeaderController::class, 'search'])->middleware('throttle:60,1')->name('header.search');
+    Route::get('notificaciones', [HeaderController::class, 'notifications'])->middleware('throttle:60,1')->name('header.notifications');
+
+    // Marca la bienvenida de primer inicio de sesión como vista.
+    Route::post('bienvenida', function (Request $request) {
+        $request->user()->forceFill(['welcomed_at' => now()])->save();
+
+        return back();
+    })->name('welcome.dismiss');
+
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::middleware('admin')->prefix('usuarios')->name('users.')->group(function () {
@@ -32,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy');
     });
 
+    Route::get('bitacora', [ActivityLogController::class, 'index'])
+        ->middleware('admin')->name('activity.index');
+
     Route::prefix('oportunidades')->name('opportunities.')->group(function () {
         Route::get('/', [OpportunityController::class, 'index'])->name('index');
         Route::post('/', [OpportunityController::class, 'store'])->name('store');
@@ -39,9 +57,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{opportunity}', [OpportunityController::class, 'update'])->name('update');
         Route::delete('{opportunity}', [OpportunityController::class, 'destroy'])->name('destroy');
         Route::patch('{opportunity}/mover', [OpportunityController::class, 'move'])->name('move');
+        Route::post('{opportunity}/contactos', [OpportunityController::class, 'attachContact'])->name('contacts.attach');
+        Route::delete('{opportunity}/contactos/{contact}', [OpportunityController::class, 'detachContact'])->name('contacts.detach');
         Route::post('{opportunity}/cotizaciones', [OpportunityController::class, 'attachQuote'])->name('quotes.attach');
         Route::delete('{opportunity}/cotizaciones/{quote}', [OpportunityController::class, 'detachQuote'])->name('quotes.detach');
         Route::post('{opportunity}/cotizaciones/{quote}/vigente', [OpportunityController::class, 'activateQuote'])->name('quotes.activate');
+    });
+
+    Route::prefix('contactos')->name('contacts.')->group(function () {
+        Route::get('/', [ContactController::class, 'index'])->name('index');
+        Route::get('buscar', [ContactController::class, 'search'])->middleware('throttle:60,1')->name('search');
+        Route::get('nuevo', [ContactController::class, 'create'])->name('create');
+        Route::post('/', [ContactController::class, 'store'])->name('store');
+        Route::get('{contact}/editar', [ContactController::class, 'edit'])->name('edit');
+        Route::put('{contact}', [ContactController::class, 'update'])->name('update');
+        Route::delete('{contact}', [ContactController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('clientes')->name('clients.')->group(function () {

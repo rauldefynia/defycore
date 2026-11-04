@@ -9,6 +9,7 @@ export type User = {
     microsoft_connected?: boolean;
     microsoft_email?: string | null;
     email_verified_at: string | null;
+    welcomed_at?: string | null;
     two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;

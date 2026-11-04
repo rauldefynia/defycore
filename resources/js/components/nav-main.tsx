@@ -8,6 +8,9 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
+const hrefOf = (href: NavItem['href']): string | undefined =>
+    typeof href === 'string' ? href : (href as { url?: string }).url;
+
 export function NavMain({ items }: { items: NavItem[] }) {
     const { isCurrentUrl } = useCurrentUrl();
 
@@ -15,7 +18,10 @@ export function NavMain({ items }: { items: NavItem[] }) {
         <SidebarGroup className="px-2.5 py-0">
             <SidebarMenu>
                 {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem
+                        key={item.title}
+                        data-tour={hrefOf(item.href)}
+                    >
                         {item.href ? (
                             <SidebarMenuButton
                                 asChild

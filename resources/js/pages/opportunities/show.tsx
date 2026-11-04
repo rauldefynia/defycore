@@ -7,9 +7,11 @@ import {
     Star,
     Trash2,
     Unlink,
+    UserPlus,
 } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
+import { ContactSearch } from '@/components/contact-search';
 import { LostReasonDialog } from '@/components/opportunity-lost-dialog';
 import { Button } from '@/components/ui/button';
 import { useWinCelebration } from '@/components/win-celebration';
@@ -28,6 +30,15 @@ type QuoteRow = {
     currency: string;
     total: number;
     active_with_client: boolean;
+};
+
+type ContactRow = {
+    id: number;
+    name: string;
+    position: string | null;
+    email: string | null;
+    phone: string | null;
+    role: string | null;
 };
 
 type Opp = {
@@ -54,12 +65,14 @@ export default function OpportunityShow({
     opportunity,
     quotes,
     availableQuotes,
+    contacts,
     stages,
     clients,
 }: {
     opportunity: Opp;
     quotes: QuoteRow[];
     availableQuotes: QuoteRow[];
+    contacts: ContactRow[];
     stages: Stage[];
     clients: { id: number; name: string }[];
 }) {
@@ -71,6 +84,36 @@ export default function OpportunityShow({
         notes: opportunity.notes ?? '',
     });
     const [attachId, setAttachId] = useState('');
+    const [contactId, setContactId] = useState('');
+    const [contactRole, setContactRole] = useState('');
+    // Cambiar la clave reinicia el buscador tras anexar.
+    const [contactKey, setContactKey] = useState(0);
+
+    const attachContact = () => {
+        if (!contactId) return;
+
+        router.post(
+            `/oportunidades/${opportunity.id}/contactos`,
+            { contact_id: contactId, role: contactRole || null },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setContactId('');
+                    setContactRole('');
+                    setContactKey((k) => k + 1);
+                },
+            },
+        );
+    };
+
+    const detachContact = (c: ContactRow) => {
+        if (confirm(`¿Quitar a ${c.name} de esta oportunidad?`)) {
+            router.delete(
+                `/oportunidades/${opportunity.id}/contactos/${c.id}`,
+                { preserveScroll: true },
+            );
+        }
+    };
     const [askLost, setAskLost] = useState(false);
     const style = STAGE_STYLES[opportunity.stage];
     const hasQuotes = quotes.length > 0;
@@ -410,6 +453,95 @@ export default function OpportunityShow({
                                                 <Unlink />
                                             </Button>
                                         </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+
+                    <section className={`${card} content-start lg:col-span-2`}>
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="text-[15px] font-semibold">
+                                Contactos ({contacts.length})
+                            </h2>
+                            <Button asChild size="sm" variant="ghost">
+                                <Link href="/contactos/nuevo">
+                                    <UserPlus /> Nuevo contacto
+                                </Link>
+                            </Button>
+                        </div>
+
+                        <div className="mb-4 flex flex-wrap gap-2">
+                            <ContactSearch
+                                key={contactKey}
+                                keepSelection
+                                className="max-w-sm min-w-60 flex-1"
+                                exclude={contacts.map((c) => c.id)}
+                                onSelect={(c) =>
+                                    setContactId(c.id ? String(c.id) : '')
+                                }
+                            />
+                            <Input
+                                className="max-w-52"
+                                placeholder="Rol (decisor, técnico…)"
+                                maxLength={100}
+                                value={contactRole}
+                                onChange={(e) => setContactRole(e.target.value)}
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!contactId}
+                                onClick={attachContact}
+                            >
+                                <Link2 /> Anexar
+                            </Button>
+                        </div>
+
+                        {contacts.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                Aún no hay contactos en esta oportunidad.
+                            </p>
+                        ) : (
+                            <ul className="grid gap-2 md:grid-cols-2">
+                                {contacts.map((c) => (
+                                    <li
+                                        key={c.id}
+                                        className="flex items-center gap-3 rounded-lg border p-3"
+                                    >
+                                        <span className="bg-accent text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                                            {c.name
+                                                .split(/\s+/)
+                                                .slice(0, 2)
+                                                .map((w) => w[0]?.toUpperCase())
+                                                .join('')}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <Link
+                                                href={`/contactos/${c.id}/editar`}
+                                                className="text-primary block truncate text-sm font-medium"
+                                            >
+                                                {c.name}
+                                            </Link>
+                                            <div className="text-muted-foreground truncate text-xs">
+                                                {[c.role, c.position]
+                                                    .filter(Boolean)
+                                                    .join(' · ') || '—'}
+                                            </div>
+                                            <div className="text-muted-foreground truncate text-xs">
+                                                {[c.email, c.phone]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
+                                            </div>
+                                        </div>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            title="Quitar"
+                                            onClick={() => detachContact(c)}
+                                        >
+                                            <Unlink />
+                                        </Button>
                                     </li>
                                 ))}
                             </ul>

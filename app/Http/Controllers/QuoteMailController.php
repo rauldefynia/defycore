@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Quote;
 use App\Models\QuoteEmail;
 use App\Services\Microsoft\MicrosoftException;
@@ -66,6 +67,10 @@ class QuoteMailController extends Controller
             'subject' => $data['subject'],
             'attachment' => $attachment['name'] ?? null,
             'sent_at' => now(),
+        ]);
+
+        ActivityLog::record('email_sent', 'quote', $quote->id, $quote->activityLabel(), [
+            'to' => $to, 'cc' => $cc, 'subject' => $data['subject'], 'attachment' => $attachment['name'] ?? null,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Correo enviado a '.implode(', ', $to).'.']);

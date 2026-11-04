@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             SellerUserSeeder::class,
             IssuerSeeder::class,
             ClientSeeder::class,
+            ContactSeeder::class,
             DemoSalesSeeder::class,
         ]);
     }

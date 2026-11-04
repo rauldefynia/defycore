@@ -1,8 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
+    BookUser,
     FilePlus,
     FileText,
     Kanban,
+    ScrollText,
     ShieldCheck,
     UserCog,
     UserPlus,
@@ -17,9 +19,11 @@ type Props = {
         quotes: number;
         quotes_month: number;
         clients: number;
+        contacts: number;
         opportunities_open: number;
         opportunities_won: number;
         users: number | null;
+        activity_today: number | null;
     };
     recentQuotes: {
         id: number;
@@ -77,6 +81,13 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
             chip: 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
             live: `${stats.clients} clientes registrados`,
         },
+        {
+            label: 'Contactos',
+            href: '/contactos',
+            icon: BookUser,
+            chip: 'bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400',
+            live: `${stats.contacts} contactos · reutilízalos en cotizaciones`,
+        },
         // Sólo administradores (el servidor envía `users: null` a los vendedores).
         ...(stats.users !== null
             ? [
@@ -86,6 +97,13 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
                       icon: ShieldCheck,
                       chip: 'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
                       live: `${stats.users} usuarios activos · administra accesos`,
+                  },
+                  {
+                      label: 'Bitácora',
+                      href: '/bitacora',
+                      icon: ScrollText,
+                      chip: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                      live: `${stats.activity_today ?? 0} movimientos hoy · auditoría del sistema`,
                   },
               ]
             : []),
@@ -98,6 +116,7 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
             icon: FilePlus,
         },
         { label: 'Nuevo cliente', href: '/clientes/nuevo', icon: UserPlus },
+        { label: 'Nuevo contacto', href: '/contactos/nuevo', icon: BookUser },
         { label: 'Ver pipeline', href: '/oportunidades', icon: Kanban },
         ...(stats.users !== null
             ? [
@@ -105,6 +124,11 @@ export default function Dashboard({ stats, recentQuotes }: Props) {
                       label: 'Nuevo usuario',
                       href: '/usuarios/nuevo',
                       icon: UserCog,
+                  },
+                  {
+                      label: 'Ver bitácora',
+                      href: '/bitacora',
+                      icon: ScrollText,
                   },
               ]
             : []),

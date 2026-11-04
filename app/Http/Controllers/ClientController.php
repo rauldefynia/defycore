@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ClientRequest;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -47,6 +49,7 @@ class ClientController extends Controller
     public function store(ClientRequest $request): RedirectResponse
     {
         $client = Client::create($this->data($request));
+        $this->syncContacts($request, $client);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente creado.']);
 
@@ -59,6 +62,8 @@ class ClientController extends Controller
 
         return Inertia::render('clients/form', [
             'client' => $client->loadCount('quotes'),
+            'linkedContacts' => Contact::visibleTo($request->user())->where('client_id', $client->id)
+                ->orderBy('name')->get(['id', 'name', 'position', 'email', 'phone', 'mobile']),
             ...$this->sellerProps($request),
         ]);
     }
@@ -68,6 +73,7 @@ class ClientController extends Controller
         Gate::allowIf($client->isAccessibleBy($request->user()));
 
         $client->update($this->data($request));
+        $this->syncContacts($request, $client);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente actualizado.']);
 
@@ -99,11 +105,32 @@ class ClientController extends Controller
         ];
     }
 
+    /**
+     * Deja exactamente esos contactos ligados al cliente: liga los elegidos y desliga los demás
+     * (sólo entre los que el usuario puede ver). Sin `contact_ids` en la petición no se toca nada.
+     */
+    private function syncContacts(ClientRequest $request, Client $client): void
+    {
+        if (! $request->has('contact_ids')) {
+            return;
+        }
+
+        $ids = collect($request->validated('contact_ids') ?? [])->map(fn ($id) => (int) $id);
+        $user = $request->user();
+
+        Contact::visibleTo($user)->where('client_id', $client->id)->whereNotIn('id', $ids)
+            ->get()->each->update(['client_id' => null]);
+
+        Contact::visibleTo($user)->whereIn('id', $ids)
+            ->where(fn ($q) => $q->whereNull('client_id')->orWhere('client_id', '!=', $client->id))
+            ->get()->each->update(['client_id' => $client->id]);
+    }
+
     /** @return array<string, mixed> */
     private function data(ClientRequest $request): array
     {
         $user = $request->user();
-        $data = $request->validated();
+        $data = Arr::except($request->validated(), ['contact_ids']);
         $data['country'] = $data['country'] ?? 'Mexico';
 
         // Un vendedor sólo puede crear/editar clientes propios; el administrador elige el vendedor.

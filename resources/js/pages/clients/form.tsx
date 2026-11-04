@@ -1,8 +1,16 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Check, ChevronLeft, ChevronRight, FilePlus, Save } from 'lucide-react';
+import {
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    FilePlus,
+    Save,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
+import { ContactSearch } from '@/components/contact-search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +35,17 @@ type ClientProp = {
     quotes_count?: number;
 };
 
+type LinkedContact = {
+    id: number;
+    name: string;
+    position: string | null;
+    email: string | null;
+    phone: string | null;
+    mobile: string | null;
+    /** Cliente actual del contacto elegido (para avisar que se moverá). */
+    moveFrom?: string | null;
+};
+
 const card = 'bg-card rounded-xl border p-5 shadow-sm';
 const RFC = /^([A-ZÑ&]{3,4})\d{6}([A-Z\d]{3})$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,6 +64,7 @@ const STEP_OF: Record<string, number> = {
     contact: 1,
     email: 1,
     phone: 1,
+    contact_ids: 1,
     seller_id: 2,
     reference_contact: 2,
     reference_email: 2,
@@ -60,7 +80,9 @@ export default function ClientForm({
     client,
     isAdmin,
     sellers,
+    linkedContacts = [],
 }: {
+    linkedContacts?: LinkedContact[];
     client: ClientProp | null;
     isAdmin: boolean;
     sellers: { id: number; name: string }[];
@@ -89,11 +111,28 @@ export default function ClientForm({
         city: client?.city ?? '',
         state: client?.state ?? '',
         country: client?.country ?? 'Mexico',
+        contact_ids: linkedContacts.map((c) => c.id),
     });
     const { data, setData, errors } = form;
+    const [extra, setExtra] = useState<LinkedContact[]>(linkedContacts);
+
+    const addExtra = (c: LinkedContact) => {
+        if (!c.id || extra.some((x) => x.id === c.id)) return;
+
+        setExtra((l) => [...l, c]);
+        setData('contact_ids', [...data.contact_ids, c.id]);
+    };
+
+    const removeExtra = (id: number) => {
+        setExtra((l) => l.filter((x) => x.id !== id));
+        setData(
+            'contact_ids',
+            data.contact_ids.filter((x) => x !== id),
+        );
+    };
 
     const field = (
-        key: keyof typeof data,
+        key: Exclude<keyof typeof data, 'contact_ids'>,
         label: string,
         opts: { required?: boolean; className?: string; type?: string } = {},
     ) => (
@@ -116,6 +155,31 @@ export default function ClientForm({
                 maxLength={key === 'rfc' ? 13 : undefined}
             />
             <InputError message={errors[key]} />
+        </div>
+    );
+
+    /** Copia los datos de un contacto del directorio a los campos (siguen siendo editables). */
+    const picker = (target: 'contact' | 'reference') => (
+        <div className="mb-4 grid gap-1.5 md:max-w-md">
+            <Label className="text-[12.5px]">Elegir de contactos</Label>
+            <ContactSearch
+                onSelect={(c) => {
+                    const prefix = target === 'contact' ? '' : 'reference_';
+                    form.setData((d) => ({
+                        ...d,
+                        [`${prefix}contact`]: c.name,
+                        [`${prefix}email`]: c.email ?? '',
+                        [`${prefix}phone`]: c.phone ?? c.mobile ?? '',
+                    }));
+                }}
+            />
+            <p className="text-muted-foreground text-xs">
+                Busca y elige para rellenar los campos; puedes ajustarlos
+                después o escribirlos a mano.{' '}
+                <Link href="/contactos/nuevo" className="text-primary">
+                    Nuevo contacto
+                </Link>
+            </p>
         </div>
     );
 
@@ -187,7 +251,8 @@ export default function ClientForm({
             onError: (errs: Record<string, string>) => {
                 const first = Object.keys(errs)[0];
 
-                if (first !== undefined) setStep(STEP_OF[first] ?? 0);
+                if (first !== undefined)
+                    setStep(STEP_OF[first.split('.')[0]] ?? 0);
 
                 toast.error('Revisa los campos marcados.');
             },
@@ -294,11 +359,132 @@ export default function ClientForm({
                             <h2 className="mb-4 text-[15px] font-semibold">
                                 Contacto
                             </h2>
+                            {picker('contact')}
                             <div className="grid gap-4 md:grid-cols-3">
                                 {field('contact', 'Persona de contacto')}
                                 {field('email', 'Correo', { type: 'email' })}
                                 {field('phone', 'Teléfono')}
                             </div>
+                        </section>
+                    )}
+
+                    {step === 1 && (
+                        <section className={card}>
+                            <h2 className="mb-1 text-[15px] font-semibold">
+                                Contactos adicionales ({extra.length})
+                            </h2>
+                            <p className="text-muted-foreground mb-4 text-xs">
+                                Otras personas del cliente, tomadas de tu
+                                directorio de contactos. Se ligan al cliente al
+                                guardar.
+                            </p>
+                            <div className="mb-4 grid gap-1.5 md:max-w-md">
+                                <ContactSearch
+                                    key={extra.length}
+                                    exclude={extra.map((c) => c.id)}
+                                    placeholder="Buscar contacto para agregar…"
+                                    onSelect={(c) =>
+                                        addExtra({
+                                            id: c.id,
+                                            name: c.name,
+                                            position: c.position,
+                                            email: c.email,
+                                            phone: c.phone,
+                                            mobile: c.mobile,
+                                            moveFrom:
+                                                c.client_id &&
+                                                c.client_id !== client?.id
+                                                    ? c.organization
+                                                    : null,
+                                        })
+                                    }
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    ¿No está en la lista?{' '}
+                                    <Link
+                                        href={
+                                            client
+                                                ? `/contactos/nuevo?client=${client.id}`
+                                                : '/contactos/nuevo'
+                                        }
+                                        className="text-primary"
+                                    >
+                                        Crear contacto
+                                    </Link>
+                                    {!client &&
+                                        ' (guarda primero el cliente para ligarlo automáticamente)'}
+                                </p>
+                            </div>
+
+                            {extra.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                    Aún no hay contactos adicionales.
+                                </p>
+                            ) : (
+                                <ul className="grid gap-2 md:grid-cols-2">
+                                    {extra.map((c) => (
+                                        <li
+                                            key={c.id}
+                                            className="flex items-center gap-3 rounded-lg border p-3"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <Link
+                                                    href={`/contactos/${c.id}/editar`}
+                                                    className="text-primary block truncate text-sm font-medium"
+                                                >
+                                                    {c.name}
+                                                </Link>
+                                                <div className="text-muted-foreground truncate text-xs">
+                                                    {[
+                                                        c.position,
+                                                        c.email,
+                                                        c.phone ?? c.mobile,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(' · ') || '—'}
+                                                </div>
+                                                {c.moveFrom && (
+                                                    <div className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                                                        Hoy pertenece a{' '}
+                                                        {c.moveFrom}; se moverá
+                                                        a este cliente.
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                title="Usar como contacto principal"
+                                                onClick={() =>
+                                                    setData((d) => ({
+                                                        ...d,
+                                                        contact: c.name,
+                                                        email: c.email ?? '',
+                                                        phone:
+                                                            c.phone ??
+                                                            c.mobile ??
+                                                            '',
+                                                    }))
+                                                }
+                                            >
+                                                Principal
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="ghost"
+                                                title="Quitar"
+                                                onClick={() =>
+                                                    removeExtra(c.id)
+                                                }
+                                            >
+                                                <X />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </section>
                     )}
 
@@ -349,6 +535,7 @@ export default function ClientForm({
                                     Persona que refiere o contacto alterno del
                                     cliente.
                                 </p>
+                                {picker('reference')}
                                 <div className="grid gap-4 md:grid-cols-3">
                                     {field(
                                         'reference_contact',

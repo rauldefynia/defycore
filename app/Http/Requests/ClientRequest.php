@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,6 +38,8 @@ class ClientRequest extends FormRequest
             'reference_contact' => ['nullable', 'string', 'max:255'],
             'reference_email' => ['nullable', 'email', 'max:255'],
             'reference_phone' => ['nullable', 'string', 'max:50'],
+            'contact_ids' => ['nullable', 'array', 'max:50'],
+            'contact_ids.*' => ['integer', 'distinct', Contact::existsRule($this->user())],
             'address' => ['nullable', 'string', 'max:255'],
             'zip' => ['nullable', 'string', 'max:10'],
             'city' => ['nullable', 'string', 'max:255'],

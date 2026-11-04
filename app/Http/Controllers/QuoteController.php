@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\QuoteRequest;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Issuer;
 use App\Models\Opportunity;
 use App\Models\Quote;
@@ -196,10 +197,25 @@ class QuoteController extends Controller
         $client = ! empty($data['client_id']) ? Client::visibleTo($request->user())->find($data['client_id']) : null;
         $issuer = ! empty($data['issuer_id']) ? Issuer::find($data['issuer_id']) : null;
 
-        // Los snapshots sólo se re-copian si cambió la selección (conservan el dato histórico).
-        $clientData = $client
-            ? ($quote->client_id === $client->id && $quote->client_data ? $quote->client_data : $client->snapshot())
+        // El contacto de atención sólo aplica si hay cliente; sus datos reemplazan a los del cliente en el snapshot.
+        $contact = $client && ! empty($data['contact_id'])
+            ? Contact::visibleTo($request->user())->find($data['contact_id'])
             : null;
+
+        // Los snapshots sólo se re-copian si cambió la selección (conservan el dato histórico).
+        $keepClientData = $client && $quote->client_id === $client->id && $quote->client_data
+            && (int) $quote->contact_id === (int) $contact?->id;
+        $clientData = $client
+            ? ($keepClientData ? $quote->client_data : $client->snapshot())
+            : null;
+
+        if ($clientData && $contact && ! $keepClientData) {
+            $clientData = array_merge($clientData, array_filter([
+                'contact' => $contact->name,
+                'email' => $contact->email,
+                'phone' => $contact->phone ?: $contact->mobile,
+            ]));
+        }
         $issuerData = $issuer
             ? ($quote->issuer_id === $issuer->id && $quote->issuer_data ? $quote->issuer_data : $issuer->snapshot())
             : null;
@@ -215,6 +231,7 @@ class QuoteController extends Controller
             'delivery_days_max' => $isCustom ? 1 : ($data['delivery_days_max'] ?? 5),
             'notes' => $isCustom ? ($data['notes'] ?? null) : null,
             'client_id' => $client?->id,
+            'contact_id' => $contact?->id,
             'client_data' => $clientData,
             'issuer_id' => $issuer?->id,
             'issuer_data' => $issuerData,
@@ -241,6 +258,8 @@ class QuoteController extends Controller
     {
         return [
             'clients' => Client::visibleTo(auth()->user())->orderBy('name')->get(),
+            'contacts' => Contact::visibleTo(auth()->user())->orderBy('name')
+                ->get(['id', 'name', 'position', 'client_id', 'email', 'phone']),
             'issuers' => Issuer::orderBy('name')->get(),
             'opportunities' => Opportunity::visibleTo(auth()->user())
                 ->orderBy('name')->get(['id', 'name']),

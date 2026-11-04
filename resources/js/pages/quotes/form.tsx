@@ -268,7 +268,15 @@ function stepOfError(key: string): number {
     ) {
         return 3;
     }
-    if (['client_id', 'issuer_id', 'currency', 'exchange_rate'].includes(key))
+    if (
+        [
+            'client_id',
+            'contact_id',
+            'issuer_id',
+            'currency',
+            'exchange_rate',
+        ].includes(key)
+    )
         return 1;
 
     return 0;
@@ -278,6 +286,7 @@ export default function QuoteForm({
     quote,
     clients: clientsProp,
     issuers: issuersProp,
+    contacts = [],
     opportunities,
     emails = [],
     defaults,
@@ -286,6 +295,12 @@ export default function QuoteForm({
     quote: QuoteProp | null;
     clients: Client[];
     issuers: Issuer[];
+    contacts?: {
+        id: number;
+        name: string;
+        position: string | null;
+        client_id: number | null;
+    }[];
     opportunities: { id: number; name: string }[];
     defaults: {
         date: string;
@@ -324,6 +339,7 @@ export default function QuoteForm({
             : defaults?.client_id
               ? String(defaults.client_id)
               : '',
+        contact_id: quote?.contact_id ? String(quote.contact_id) : '',
         issuer_id: quote?.issuer_id ? String(quote.issuer_id) : '',
         currency: quote?.currency ?? 'MXN',
         exchange_rate: quote?.exchange_rate ?? 1,
@@ -796,9 +812,25 @@ export default function QuoteForm({
                                     <select
                                         className={sel}
                                         value={data.client_id}
-                                        onChange={(e) =>
-                                            setData('client_id', e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            const next = e.target.value;
+                                            setData((d) => ({
+                                                ...d,
+                                                client_id: next,
+                                                // El contacto de otro cliente deja de aplicar.
+                                                contact_id: contacts.some(
+                                                    (c) =>
+                                                        String(c.id) ===
+                                                            d.contact_id &&
+                                                        (c.client_id === null ||
+                                                            String(
+                                                                c.client_id,
+                                                            ) === next),
+                                                )
+                                                    ? d.contact_id
+                                                    : '',
+                                            }));
+                                        }}
                                     >
                                         <option value="">
                                             — Sin cliente —
@@ -810,6 +842,58 @@ export default function QuoteForm({
                                         ))}
                                     </select>
                                     <InputError message={err('client_id')} />
+
+                                    <div className="mt-2 grid gap-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[12.5px] font-medium">
+                                                Contacto de atención
+                                            </span>
+                                            <Link
+                                                href="/contactos/nuevo"
+                                                className="text-primary text-xs"
+                                            >
+                                                Administrar contactos
+                                            </Link>
+                                        </div>
+                                        <select
+                                            className={sel}
+                                            disabled={!data.client_id}
+                                            value={data.contact_id}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'contact_id',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        >
+                                            <option value="">
+                                                {data.client_id
+                                                    ? '— Contacto del cliente —'
+                                                    : 'Selecciona primero un cliente'}
+                                            </option>
+                                            {contacts
+                                                .filter(
+                                                    (c) =>
+                                                        c.client_id === null ||
+                                                        String(c.client_id) ===
+                                                            data.client_id,
+                                                )
+                                                .map((c) => (
+                                                    <option
+                                                        key={c.id}
+                                                        value={c.id}
+                                                    >
+                                                        {c.name}
+                                                        {c.position
+                                                            ? ` · ${c.position}`
+                                                            : ''}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                        <InputError
+                                            message={err('contact_id')}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="grid gap-2">
                                     <div className="flex items-center justify-between">

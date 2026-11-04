@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,11 +12,28 @@ use Illuminate\Validation\Rules\Exists;
 
 class Client extends Model
 {
+    use LogsActivity;
+
+    public function activitySubject(): string
+    {
+        return 'client';
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
+    }
+
     protected $guarded = ['id'];
 
     protected function casts(): array
     {
         return ['seller_id' => 'integer'];
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class);
     }
 
     public function quotes(): HasMany
