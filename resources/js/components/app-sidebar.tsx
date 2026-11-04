@@ -3,11 +3,13 @@ import {
     BadgeDollarSign,
     BookUser,
     ChartNoAxesCombined,
+    Contact,
     FileText,
     Kanban,
     ScrollText,
     ShieldCheck,
     LayoutGrid,
+    UserCog,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -38,15 +40,23 @@ const mainNavItems: (NavEntry & { adminOnly?: boolean })[] = [
             { title: 'Gráficas', href: '/graficas', icon: ChartNoAxesCombined },
         ],
     },
-    { title: 'Clientes', href: '/clientes', icon: Users },
-    { title: 'Contactos', href: '/contactos', icon: BookUser },
     {
-        title: 'Usuarios',
-        href: '/usuarios',
+        title: 'Directorio',
+        icon: Contact,
+        children: [
+            { title: 'Clientes', href: '/clientes', icon: Users },
+            { title: 'Contactos', href: '/contactos', icon: BookUser },
+        ],
+    },
+    {
+        title: 'Administración',
         icon: ShieldCheck,
         adminOnly: true,
+        children: [
+            { title: 'Usuarios', href: '/usuarios', icon: UserCog },
+            { title: 'Bitácora', href: '/bitacora', icon: ScrollText },
+        ],
     },
-    { title: 'Bitácora', href: '/bitacora', icon: ScrollText, adminOnly: true },
 ];
 
 /** Guarda la posición del cursor: foco general del menú y brillo de la opción bajo el puntero. */

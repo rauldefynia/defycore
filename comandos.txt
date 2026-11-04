@@ -1,7 +1,7 @@
 #SUBIR CAMBIOS GITHUB
 
 git add .
-git commit -m "mockup login"
+git commit -m "sub menus"
 git push
 
 
