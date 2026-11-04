@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('owner_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('owner_id')->constrained('users')->noActionOnDelete();
             $table->foreignId('client_id')->nullable()->constrained('clients')->nullOnDelete();
             $table->string('name');
             $table->string('position')->nullable();
