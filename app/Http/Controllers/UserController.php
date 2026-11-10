@@ -53,6 +53,7 @@ class UserController extends Controller
             'role' => $data['role'],
             'active' => $request->boolean('active', true),
             'password' => $data['password'],
+            ...$this->passwordPolicy($request, $data),
             // Lo da de alta un administrador: no requiere verificar el correo.
             'email_verified_at' => now(),
         ])->save();
@@ -64,8 +65,12 @@ class UserController extends Controller
 
     public function edit(User $user): Response
     {
+        $user->loadCount(['quotes', 'opportunities', 'clients']);
+        $user->setAttribute('password_expires_at', $user->passwordExpiresAt()?->toDateString());
+        $user->setAttribute('password_expired', $user->passwordExpired());
+
         return Inertia::render('users/form', [
-            'user' => $user->loadCount(['quotes', 'opportunities', 'clients']),
+            'user' => $user,
             'roles' => $this->roles(),
         ]);
     }
@@ -92,6 +97,8 @@ class UserController extends Controller
         if (! empty($data['password'])) {
             $user->password = $data['password'];
         }
+
+        $user->forceFill($this->passwordPolicy($request, $data));
 
         $user->save();
 
@@ -144,6 +151,17 @@ class UserController extends Controller
                 'role' => 'Debe quedar al menos un administrador activo.',
             ]);
         }
+    }
+
+    /** Política de contraseña elegida en el formulario: exigir cambio y vigencia en días. */
+    private function passwordPolicy(Request $request, array $data): array
+    {
+        $expires = $request->boolean('password_expires');
+
+        return [
+            'must_change_password' => $request->boolean('must_change_password'),
+            'password_expiry_days' => $expires ? (int) ($data['password_expiry_days'] ?? 90) : null,
+        ];
     }
 
     /** @return array<int, array{key: string, label: string}> */

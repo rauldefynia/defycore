@@ -123,6 +123,8 @@ class MicrosoftAuthController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+        // Con SSO no se usa la contraseña local: no aplica el cambio obligatorio.
+        $request->session()->put('auth_via_microsoft', true);
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

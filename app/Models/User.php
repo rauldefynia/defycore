@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsActivity;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -71,6 +72,46 @@ class User extends Authenticatable implements PasskeyUser
         return Attribute::get(fn () => ! empty($this->microsoft_id) && ! empty($this->microsoft_refresh_token));
     }
 
+    /** Fecha en que vence la contraseña vigente, o null si no expira. */
+    public function passwordExpiresAt(): ?CarbonInterface
+    {
+        if (! $this->password_expiry_days) {
+            return null;
+        }
+
+        return ($this->password_changed_at ?? $this->created_at ?? now())->copy()->addDays($this->password_expiry_days);
+    }
+
+    public function passwordExpired(): bool
+    {
+        return $this->passwordExpiresAt()?->isPast() ?? false;
+    }
+
+    /** ¿Debe estrenar contraseña antes de usar el panel? (exigido por el administrador o expirada) */
+    public function mustChangePassword(): bool
+    {
+        return (bool) $this->must_change_password || $this->passwordExpired();
+    }
+
+    /** Cambio hecho por la propia persona: limpia la exigencia y reinicia la vigencia. */
+    public function changePassword(string $plain): void
+    {
+        $this->forceFill([
+            'password' => $plain,
+            'must_change_password' => false,
+        ])->save();
+    }
+
+    /** Registra cuándo se estableció cada contraseña (base de la expiración). */
+    protected static function booted(): void
+    {
+        static::saving(function (self $user) {
+            if ($user->isDirty('password') && ! $user->isDirty('password_changed_at')) {
+                $user->password_changed_at = now();
+            }
+        });
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
@@ -118,6 +159,9 @@ class User extends Authenticatable implements PasskeyUser
             'microsoft_token_expires_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'welcomed_at' => 'datetime',
+            'must_change_password' => 'boolean',
+            'password_expiry_days' => 'integer',
+            'password_changed_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];

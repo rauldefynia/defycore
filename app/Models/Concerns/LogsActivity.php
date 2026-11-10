@@ -15,7 +15,7 @@ trait LogsActivity
     private const ACTIVITY_IGNORED = [
         'id', 'created_at', 'updated_at', 'password', 'remember_token',
         'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
-        'microsoft_access_token', 'microsoft_refresh_token', 'microsoft_token_expires_at', 'welcomed_at',
+        'microsoft_access_token', 'microsoft_refresh_token', 'microsoft_token_expires_at', 'welcomed_at', 'password_changed_at',
         'client_data', 'issuer_data',
     ];
 

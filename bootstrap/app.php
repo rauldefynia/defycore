@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsurePasswordIsCurrent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -19,10 +20,19 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Confiar en el gateway/proxy para que $request->ip() devuelva al cliente real.
+        $proxies = env('TRUSTED_PROXIES', '*');
+        $middleware->trustProxies(
+            at: in_array($proxies, ['*', '**'], true) ? $proxies : array_filter(array_map('trim', explode(',', (string) $proxies))),
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
         $middleware->alias(['admin' => EnsureAdmin::class]);
 
         $middleware->web(append: [
             EnsureUserIsActive::class,
+            EnsurePasswordIsCurrent::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

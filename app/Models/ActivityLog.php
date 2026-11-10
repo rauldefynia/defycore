@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ClientIp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,7 +63,7 @@ class ActivityLog extends Model
             'subject_id' => $subjectId,
             'subject_label' => $label !== null ? mb_substr($label, 0, 255) : null,
             'changes' => $changes ?: null,
-            'ip' => $request?->ip(),
+            'ip' => ClientIp::resolve($request),
             'user_agent' => $request ? mb_substr((string) $request->userAgent(), 0, 255) : null,
         ]);
     }

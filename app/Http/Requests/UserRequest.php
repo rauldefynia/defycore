@@ -29,6 +29,9 @@ class UserRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:50'],
             'role' => ['required', Rule::in(array_keys(User::ROLES))],
             'active' => ['boolean'],
+            'must_change_password' => ['boolean'],
+            'password_expires' => ['boolean'],
+            'password_expiry_days' => ['nullable', 'required_if:password_expires,true', 'integer', 'min:1', 'max:365'],
             // Al editar, la contraseña es opcional (vacía = no cambiar).
             'password' => [
                 $creating ? 'required' : 'nullable',
@@ -45,6 +48,7 @@ class UserRequest extends FormRequest
             'phone' => 'teléfono',
             'role' => 'tipo de usuario',
             'password' => 'contraseña',
+            'password_expiry_days' => 'días de vigencia',
         ];
     }
 

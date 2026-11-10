@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\Auth\ForcePasswordController;
 use App\Http\Controllers\Auth\MicrosoftAuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContactController;
@@ -9,8 +10,8 @@ use App\Http\Controllers\HeaderController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\QuoteCatalogController;
 use App\Http\Controllers\QuoteController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\QuoteMailController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,11 @@ Route::get('auth/microsoft/callback', [MicrosoftAuthController::class, 'callback
     ->middleware('throttle:20,1')->name('microsoft.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Cambio obligatorio de contraseña (primer inicio de sesión o contraseña expirada).
+    Route::get('cambiar-contrasena', [ForcePasswordController::class, 'show'])->name('password.force.show');
+    Route::put('cambiar-contrasena', [ForcePasswordController::class, 'update'])
+        ->middleware('throttle:10,1')->name('password.force.update');
+
     Route::delete('auth/microsoft', [MicrosoftAuthController::class, 'disconnect'])->name('microsoft.disconnect');
 
     // Barra superior: búsqueda global y notificaciones (JSON).

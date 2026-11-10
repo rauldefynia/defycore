@@ -19,9 +19,53 @@ type UserProp = {
     quotes_count?: number;
     opportunities_count?: number;
     clients_count?: number;
+    must_change_password?: boolean;
+    password_expiry_days?: number | null;
+    password_expires_at?: string | null;
+    password_expired?: boolean;
 };
 
 const card = 'bg-card rounded-xl border p-5 shadow-sm';
+
+/** Interruptor accesible (activar / desactivar). */
+function Toggle({
+    checked,
+    onChange,
+    title,
+    text,
+}: {
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    title: string;
+    text: string;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            data-sound="toggle"
+            onClick={() => onChange(!checked)}
+            className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition ${checked ? 'border-primary bg-accent/60' : 'hover:bg-accent/40'}`}
+        >
+            <span
+                className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+            >
+                <span
+                    className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4' : ''}`}
+                />
+            </span>
+            <span>
+                <span className="block text-[13.5px] font-semibold">
+                    {title}
+                </span>
+                <span className="text-muted-foreground block text-xs leading-snug">
+                    {text}
+                </span>
+            </span>
+        </button>
+    );
+}
 
 /** Contraseña aleatoria legible (sin caracteres ambiguos). */
 function generatePassword(): string {
@@ -54,6 +98,9 @@ export default function UserForm({ user }: { user: UserProp | null }) {
         active: user?.active ?? true,
         password: '',
         password_confirmation: '',
+        must_change_password: user?.must_change_password ?? true,
+        password_expires: !!user?.password_expiry_days,
+        password_expiry_days: String(user?.password_expiry_days ?? 90),
     });
     const { data, setData, errors } = form;
 
@@ -252,6 +299,59 @@ export default function UserForm({ user }: { user: UserProp | null }) {
                                 }
                             />
                         </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 border-t pt-5">
+                        <h3 className="text-[13.5px] font-semibold">
+                            Política de la contraseña
+                        </h3>
+
+                        <Toggle
+                            checked={data.must_change_password}
+                            onChange={(v) => setData('must_change_password', v)}
+                            title="Debe cambiarla en su primer inicio de sesión"
+                            text="Al entrar con esta contraseña, el sistema le pedirá crear una propia antes de usar el panel."
+                        />
+
+                        <Toggle
+                            checked={data.password_expires}
+                            onChange={(v) => setData('password_expires', v)}
+                            title="La contraseña expira"
+                            text="Pasado el plazo, tendrá que cambiarla al iniciar sesión para poder continuar."
+                        />
+
+                        {data.password_expires && (
+                            <div className="animate-in fade-in slide-in-from-top-2 grid gap-1.5 pl-1 duration-300 sm:max-w-xs">
+                                <Label className="text-[12.5px]">
+                                    Vigencia (días)
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={365}
+                                    value={data.password_expiry_days}
+                                    onChange={(e) =>
+                                        setData(
+                                            'password_expiry_days',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={errors.password_expiry_days}
+                                />
+                                {user?.password_expires_at && (
+                                    <p
+                                        className={`text-xs ${user.password_expired ? 'text-destructive' : 'text-muted-foreground'}`}
+                                    >
+                                        {user.password_expired
+                                            ? 'La contraseña actual ya expiró el '
+                                            : 'La contraseña actual vence el '}
+                                        {user.password_expires_at}.
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
             </form>
