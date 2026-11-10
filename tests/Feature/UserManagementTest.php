@@ -63,7 +63,21 @@ class UserManagementTest extends TestCase
         $this->assertSame('Laura M.', $u->fresh()->name);
         $this->assertTrue(\Hash::check('Clave-Segura-123', $u->fresh()->password));
 
-        $this->put("/usuarios/{$u->id}", $this->payload(['password' => 'Otra-Clave-456', 'password_confirmation' => 'Otra-Clave-456']));
+        $new = ['password' => 'Otra-Clave-456', 'password_confirmation' => 'Otra-Clave-456'];
+
+        // Sin activar "modificar contraseña" se ignora aunque venga.
+        $this->put("/usuarios/{$u->id}", $this->payload($new));
+        $this->assertTrue(\Hash::check('Clave-Segura-123', $u->fresh()->password));
+
+        // Activado, exige la contraseña del administrador logueado.
+        $this->put("/usuarios/{$u->id}", $this->payload($new + ['change_password' => true]))
+            ->assertSessionHasErrors('admin_password');
+        $this->put("/usuarios/{$u->id}", $this->payload($new + ['change_password' => true, 'admin_password' => 'incorrecta']))
+            ->assertSessionHasErrors('admin_password');
+        $this->assertTrue(\Hash::check('Clave-Segura-123', $u->fresh()->password));
+
+        $this->put("/usuarios/{$u->id}", $this->payload($new + ['change_password' => true, 'admin_password' => 'password']))
+            ->assertSessionHasNoErrors();
         $this->assertTrue(\Hash::check('Otra-Clave-456', $u->fresh()->password));
 
         $this->get("/usuarios/{$u->id}/editar")->assertOk();

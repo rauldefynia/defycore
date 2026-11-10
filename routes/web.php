@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
+// Reto del captcha propio del login.
+Route::get('captcha', \App\Http\Controllers\Auth\CaptchaController::class)
+    ->middleware('throttle:30,1')->name('captcha');
+
 // SSO Microsoft 365: sirve tanto para iniciar sesión (invitado) como para vincular (con sesión).
 Route::get('auth/microsoft/redirect', [MicrosoftAuthController::class, 'redirect'])
     ->middleware('throttle:20,1')->name('microsoft.redirect');

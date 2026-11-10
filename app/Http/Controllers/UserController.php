@@ -94,7 +94,7 @@ class UserController extends Controller
             $user->email_verified_at = now();
         }
 
-        if (! empty($data['password'])) {
+        if ($request->boolean('change_password') && ! empty($data['password'])) {
             $user->password = $data['password'];
         }
 

@@ -2,6 +2,7 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
+import LoginCaptcha from '@/components/login-captcha';
 import MicrosoftButton from '@/components/microsoft-button';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -16,12 +17,18 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    captchaEnabled: boolean;
 };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Inicio de sesión en dos pasos: primero el correo, después la contraseña. */
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({
+    status,
+    canResetPassword,
+    captchaEnabled,
+}: Props) {
+    const [captchaKey, setCaptchaKey] = useState(0);
     const { microsoftEnabled } = usePage<{ microsoftEnabled: boolean }>().props;
     const [step, setStep] = useState<1 | 2>(1);
     const [email, setEmail] = useState('');
@@ -66,6 +73,7 @@ export default function Login({ status, canResetPassword }: Props) {
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
+                onFinish={() => setCaptchaKey((k) => k + 1)}
                 className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
@@ -226,6 +234,13 @@ export default function Login({ status, canResetPassword }: Props) {
                                             }
                                         />
                                     </div>
+
+                                    {captchaEnabled && (
+                                        <LoginCaptcha
+                                            refreshKey={captchaKey}
+                                            error={errors.captcha}
+                                        />
+                                    )}
 
                                     <div
                                         style={{ animationDelay: '230ms' }}

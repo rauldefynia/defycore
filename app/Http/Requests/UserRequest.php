@@ -32,10 +32,16 @@ class UserRequest extends FormRequest
             'must_change_password' => ['boolean'],
             'password_expires' => ['boolean'],
             'password_expiry_days' => ['nullable', 'required_if:password_expires,true', 'integer', 'min:1', 'max:365'],
-            // Al editar, la contraseña es opcional (vacía = no cambiar).
+            // Al editar sólo se cambia si se activa "modificar contraseña", y exige
+            // la contraseña del administrador que está haciendo el cambio.
+            'change_password' => ['boolean'],
             'password' => [
-                $creating ? 'required' : 'nullable',
+                $creating || $this->boolean('change_password') ? 'required' : 'nullable',
                 'string', Password::default(), 'confirmed',
+            ],
+            'admin_password' => [
+                ! $creating && $this->boolean('change_password') ? 'required' : 'nullable',
+                'string', 'current_password',
             ],
         ];
     }
@@ -48,6 +54,7 @@ class UserRequest extends FormRequest
             'phone' => 'teléfono',
             'role' => 'tipo de usuario',
             'password' => 'contraseña',
+            'admin_password' => 'tu contraseña',
             'password_expiry_days' => 'días de vigencia',
         ];
     }
@@ -56,6 +63,8 @@ class UserRequest extends FormRequest
     {
         return [
             'email.unique' => 'Ya existe un usuario con este correo.',
+            'admin_password.required' => 'Escribe tu contraseña de administrador para confirmar el cambio.',
+            'admin_password.current_password' => 'Tu contraseña de administrador es incorrecta.',
             'password.confirmed' => 'La confirmación de la contraseña no coincide.',
         ];
     }

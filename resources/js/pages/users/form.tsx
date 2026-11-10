@@ -96,6 +96,8 @@ export default function UserForm({ user }: { user: UserProp | null }) {
         phone: user?.phone ?? '',
         role: (user?.role ?? 'seller') as 'admin' | 'seller',
         active: user?.active ?? true,
+        change_password: !user,
+        admin_password: '',
         password: '',
         password_confirmation: '',
         must_change_password: user?.must_change_password ?? true,
@@ -110,8 +112,15 @@ export default function UserForm({ user }: { user: UserProp | null }) {
         if (user) {
             form.put(`/usuarios/${user.id}`, {
                 preserveScroll: true,
-                onSuccess: () =>
-                    form.reset('password', 'password_confirmation'),
+                onSuccess: () => {
+                    form.reset(
+                        'password',
+                        'password_confirmation',
+                        'admin_password',
+                    );
+                    // vuelve a contraer la sección
+                    setData('change_password', false);
+                },
             });
         } else {
             form.post('/usuarios');
@@ -234,21 +243,14 @@ export default function UserForm({ user }: { user: UserProp | null }) {
                     </div>
                     <InputError className="mt-2" message={errors.role} />
 
-                    <label className="mt-5 flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
+                    <div className="mt-5">
+                        <Toggle
                             checked={data.active}
-                            onChange={(e) =>
-                                setData('active', e.target.checked)
-                            }
+                            onChange={(v) => setData('active', v)}
+                            title={data.active ? 'Usuario activo' : 'Usuario inactivo'}
+                            text="Si lo desactivas no podrá iniciar sesión."
                         />
-                        <span>
-                            Usuario activo{' '}
-                            <span className="text-muted-foreground text-xs">
-                                (si lo desactivas no podrá iniciar sesión)
-                            </span>
-                        </span>
-                    </label>
+                    </div>
                 </section>
 
                 <section className={card}>
@@ -256,103 +258,155 @@ export default function UserForm({ user }: { user: UserProp | null }) {
                         <h2 className="text-[15px] font-semibold">
                             Contraseña
                         </h2>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={fill}
-                        >
-                            <Dices /> Generar
-                        </Button>
-                    </div>
-                    <p className="text-muted-foreground mb-4 text-xs">
-                        {user
-                            ? 'Déjala vacía para conservar la actual.'
-                            : 'Mínimo 8 caracteres. Compártela con el usuario por un medio seguro.'}
-                    </p>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="grid gap-1.5">
-                            <Label className="text-[12.5px]">
-                                Contraseña{user ? '' : ' *'}
-                            </Label>
-                            <PasswordInput
-                                autoComplete="new-password"
-                                value={data.password}
-                                onChange={(e) =>
-                                    setData('password', e.target.value)
-                                }
-                            />
-                            <InputError message={errors.password} />
-                        </div>
-                        <div className="grid gap-1.5">
-                            <Label className="text-[12.5px]">
-                                Confirmar contraseña
-                            </Label>
-                            <PasswordInput
-                                autoComplete="new-password"
-                                value={data.password_confirmation}
-                                onChange={(e) =>
-                                    setData(
-                                        'password_confirmation',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-5 grid gap-3 border-t pt-5">
-                        <h3 className="text-[13.5px] font-semibold">
-                            Política de la contraseña
-                        </h3>
-
-                        <Toggle
-                            checked={data.must_change_password}
-                            onChange={(v) => setData('must_change_password', v)}
-                            title="Debe cambiarla en su primer inicio de sesión"
-                            text="Al entrar con esta contraseña, el sistema le pedirá crear una propia antes de usar el panel."
-                        />
-
-                        <Toggle
-                            checked={data.password_expires}
-                            onChange={(v) => setData('password_expires', v)}
-                            title="La contraseña expira"
-                            text="Pasado el plazo, tendrá que cambiarla al iniciar sesión para poder continuar."
-                        />
-
-                        {data.password_expires && (
-                            <div className="animate-in fade-in slide-in-from-top-2 grid gap-1.5 pl-1 duration-300 sm:max-w-xs">
-                                <Label className="text-[12.5px]">
-                                    Vigencia (días)
-                                </Label>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    max={365}
-                                    value={data.password_expiry_days}
-                                    onChange={(e) =>
-                                        setData(
-                                            'password_expiry_days',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <InputError
-                                    message={errors.password_expiry_days}
-                                />
-                                {user?.password_expires_at && (
-                                    <p
-                                        className={`text-xs ${user.password_expired ? 'text-destructive' : 'text-muted-foreground'}`}
-                                    >
-                                        {user.password_expired
-                                            ? 'La contraseña actual ya expiró el '
-                                            : 'La contraseña actual vence el '}
-                                        {user.password_expires_at}.
-                                    </p>
-                                )}
-                            </div>
+                        {data.change_password && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={fill}
+                            >
+                                <Dices /> Generar
+                            </Button>
                         )}
                     </div>
+
+                    {user ? (
+                        <Toggle
+                            checked={data.change_password}
+                            onChange={(v) =>
+                                setData((d) => ({
+                                    ...d,
+                                    change_password: v,
+                                    ...(v
+                                        ? {}
+                                        : {
+                                              password: '',
+                                              password_confirmation: '',
+                                              admin_password: '',
+                                          }),
+                                }))
+                            }
+                            title="Modificar contraseña"
+                            text="Actívalo para asignarle una nueva contraseña y editar su política. Por seguridad se pedirá tu contraseña de administrador."
+                        />
+                    ) : (
+                        <p className="text-muted-foreground mb-4 text-xs">
+                            Mínimo 8 caracteres. Compártela con el usuario por
+                            un medio seguro.
+                        </p>
+                    )}
+
+                    {data.change_password && (
+                        <div className="animate-in fade-in slide-in-from-top-2 mt-4 duration-300">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="grid gap-1.5">
+                                    <Label className="text-[12.5px]">
+                                        Nueva contraseña *
+                                    </Label>
+                                    <PasswordInput
+                                        autoComplete="new-password"
+                                        value={data.password}
+                                        onChange={(e) =>
+                                            setData('password', e.target.value)
+                                        }
+                                    />
+                                    <InputError message={errors.password} />
+                                </div>
+                                <div className="grid gap-1.5">
+                                    <Label className="text-[12.5px]">
+                                        Confirmar contraseña
+                                    </Label>
+                                    <PasswordInput
+                                        autoComplete="new-password"
+                                        value={data.password_confirmation}
+                                        onChange={(e) =>
+                                            setData(
+                                                'password_confirmation',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                {user && (
+                                    <div className="grid gap-1.5 md:col-span-2 md:max-w-[calc(50%-0.5rem)]">
+                                        <Label className="text-[12.5px]">
+                                            Tu contraseña (administrador) *
+                                        </Label>
+                                        <PasswordInput
+                                            autoComplete="current-password"
+                                            value={data.admin_password}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'admin_password',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        <InputError
+                                            message={errors.admin_password}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-5 grid gap-3 border-t pt-5">
+                                <h3 className="text-[13.5px] font-semibold">
+                                    Política de la contraseña
+                                </h3>
+
+                                <Toggle
+                                    checked={data.must_change_password}
+                                    onChange={(v) =>
+                                        setData('must_change_password', v)
+                                    }
+                                    title="Debe cambiarla en su primer inicio de sesión"
+                                    text="Al entrar con esta contraseña, el sistema le pedirá crear una propia antes de usar el panel."
+                                />
+
+                                <Toggle
+                                    checked={data.password_expires}
+                                    onChange={(v) =>
+                                        setData('password_expires', v)
+                                    }
+                                    title="La contraseña expira"
+                                    text="Pasado el plazo, tendrá que cambiarla al iniciar sesión para poder continuar."
+                                />
+
+                                {data.password_expires && (
+                                    <div className="animate-in fade-in slide-in-from-top-2 grid gap-1.5 pl-1 duration-300 sm:max-w-xs">
+                                        <Label className="text-[12.5px]">
+                                            Vigencia (días)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={365}
+                                            value={data.password_expiry_days}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'password_expiry_days',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        <InputError
+                                            message={errors.password_expiry_days}
+                                        />
+                                        {user?.password_expires_at && (
+                                            <p
+                                                className={`text-xs ${user.password_expired ? 'text-destructive' : 'text-muted-foreground'}`}
+                                            >
+                                                {user.password_expired
+                                                    ? 'La contraseña actual ya expiró el '
+                                                    : 'La contraseña actual vence el '}
+                                                {user.password_expires_at}.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </section>
             </form>
         </>

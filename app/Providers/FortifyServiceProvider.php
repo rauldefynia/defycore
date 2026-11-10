@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
+use App\Support\Captcha;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +45,13 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureAuthentication(): void
     {
         Fortify::authenticateUsing(function (Request $request) {
+            // Captcha propio: se valida antes de tocar las credenciales.
+            if (Captcha::enabled() && ! Captcha::verify($request, $request->input('captcha'))) {
+                throw ValidationException::withMessages([
+                    'captcha' => 'Respuesta incorrecta. Intenta con el nuevo reto.',
+                ]);
+            }
+
             $user = User::where(Fortify::username(), $request->input(Fortify::username()))->first();
 
             if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
@@ -76,6 +84,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
+            'captchaEnabled' => Captcha::enabled(),
             'status' => $request->session()->get('status'),
         ]));
 
