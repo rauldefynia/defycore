@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { confirmAction } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -37,13 +38,19 @@ export default function ClientsIndex({
         router.get('/clientes', { search }, { preserveState: true });
     };
 
-    const remove = (c: ClientRow) => {
+    const remove = async (c: ClientRow) => {
         const extra =
             c.quotes_count > 0
-                ? `\n\nSus ${c.quotes_count} cotizaciones conservarán los datos con los que se emitieron.`
-                : '';
+                ? `Sus ${c.quotes_count} cotizaciones conservarán los datos con los que se emitieron.`
+                : undefined;
 
-        if (confirm(`¿Eliminar al cliente ${c.name}?${extra}`)) {
+        if (
+            await confirmAction({
+                title: `¿Eliminar al cliente ${c.name}?`,
+                description: extra,
+                confirmText: 'Eliminar',
+            })
+        ) {
             router.delete(`/clientes/${c.id}`);
         }
     };

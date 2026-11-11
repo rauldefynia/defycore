@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { confirmAction } from '@/components/confirm-dialog';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -496,7 +497,10 @@ export default function QuoteForm({
     const deleteIssuer = async () => {
         if (
             !selectedIssuer ||
-            !confirm('¿Eliminar este emisor del catálogo?')
+            !(await confirmAction({
+                title: '¿Eliminar este emisor del catálogo?',
+                confirmText: 'Eliminar',
+            }))
         ) {
             return;
         }

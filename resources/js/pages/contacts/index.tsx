@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Mail, Pencil, Phone, Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { confirmAction } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -57,13 +58,19 @@ export default function ContactsIndex({
             { preserveState: true },
         );
 
-    const remove = (c: ContactRow) => {
+    const remove = async (c: ContactRow) => {
         const extra =
             c.opportunities_count + c.quotes_count > 0
-                ? '\n\nSe desanexará de sus oportunidades; las cotizaciones conservan los datos con los que se emitieron.'
-                : '';
+                ? 'Se desanexará de sus oportunidades; las cotizaciones conservan los datos con los que se emitieron.'
+                : undefined;
 
-        if (confirm(`¿Eliminar el contacto ${c.name}?${extra}`)) {
+        if (
+            await confirmAction({
+                title: `¿Eliminar el contacto ${c.name}?`,
+                description: extra,
+                confirmText: 'Eliminar',
+            })
+        ) {
             router.delete(`/contactos/${c.id}`);
         }
     };

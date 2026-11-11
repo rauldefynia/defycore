@@ -10,6 +10,7 @@ import {
     UserPlus,
 } from 'lucide-react';
 import { useState } from 'react';
+import { confirmAction } from '@/components/confirm-dialog';
 import InputError from '@/components/input-error';
 import { ContactSearch } from '@/components/contact-search';
 import { LostReasonDialog } from '@/components/opportunity-lost-dialog';
@@ -106,8 +107,14 @@ export default function OpportunityShow({
         );
     };
 
-    const detachContact = (c: ContactRow) => {
-        if (confirm(`¿Quitar a ${c.name} de esta oportunidad?`)) {
+    const detachContact = async (c: ContactRow) => {
+        if (
+            await confirmAction({
+                title: `¿Quitar a ${c.name} de esta oportunidad?`,
+                description: 'El contacto no se elimina, solo se desanexa.',
+                confirmText: 'Quitar',
+            })
+        ) {
             router.delete(
                 `/oportunidades/${opportunity.id}/contactos/${c.id}`,
                 { preserveScroll: true },
@@ -142,19 +149,26 @@ export default function OpportunityShow({
             },
         );
 
-    const remove = () => {
+    const remove = async () => {
         if (
-            confirm(
-                `¿Eliminar la oportunidad "${opportunity.name}"?\nSus cotizaciones se conservarán.`,
-            )
+            await confirmAction({
+                title: `¿Eliminar la oportunidad "${opportunity.name}"?`,
+                description: 'Sus cotizaciones se conservarán.',
+                confirmText: 'Eliminar',
+            })
         ) {
             router.delete(`/oportunidades/${opportunity.id}`);
         }
     };
 
-    const detach = (q: QuoteRow) => {
+    const detach = async (q: QuoteRow) => {
         if (
-            confirm(`¿Desanexar la cotización ${q.number} de esta oportunidad?`)
+            await confirmAction({
+                title: `¿Desanexar la cotización ${q.number}?`,
+                description:
+                    'La cotización no se elimina, solo deja de estar ligada a esta oportunidad.',
+                confirmText: 'Desanexar',
+            })
         ) {
             router.delete(
                 `/oportunidades/${opportunity.id}/cotizaciones/${q.id}`,

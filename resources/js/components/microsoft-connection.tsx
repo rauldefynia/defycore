@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { CheckCircle2, Unlink } from 'lucide-react';
+import { confirmAction } from '@/components/confirm-dialog';
 import MicrosoftButton, { MicrosoftLogo } from '@/components/microsoft-button';
 import { Button } from '@/components/ui/button';
 import type { Auth } from '@/types';
@@ -52,11 +53,14 @@ export default function MicrosoftConnection() {
             {user.microsoft_connected ? (
                 <Button
                     variant="outline"
-                    onClick={() => {
+                    onClick={async () => {
                         if (
-                            confirm(
-                                '¿Desconectar tu cuenta de Microsoft 365? Dejarás de poder enviar correos desde el sistema.',
-                            )
+                            await confirmAction({
+                                title: '¿Desconectar tu cuenta de Microsoft 365?',
+                                description:
+                                    'Dejarás de poder enviar correos desde el sistema.',
+                                confirmText: 'Desconectar',
+                            })
                         ) {
                             router.delete('/auth/microsoft', {
                                 preserveScroll: true,

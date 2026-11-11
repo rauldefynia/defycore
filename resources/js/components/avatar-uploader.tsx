@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { confirmAction } from '@/components/confirm-dialog';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -68,8 +69,16 @@ export default function AvatarUploader() {
         );
     };
 
-    const remove = () => {
-        if (!confirm('¿Quitar tu foto de perfil?')) return;
+    const remove = async () => {
+        if (
+            !(await confirmAction({
+                title: '¿Quitar tu foto de perfil?',
+                description: 'Se mostrarán tus iniciales en su lugar.',
+                confirmText: 'Quitar',
+            }))
+        ) {
+            return;
+        }
 
         setBusy(true);
         router.delete('/settings/profile/avatar', {

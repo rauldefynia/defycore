@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Pencil, Search, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { confirmAction } from '@/components/confirm-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,8 +51,13 @@ export default function UsersIndex({
             { preserveState: true },
         );
 
-    const remove = (u: UserRow) => {
-        if (confirm(`¿Eliminar al usuario ${u.name}?`)) {
+    const remove = async (u: UserRow) => {
+        if (
+            await confirmAction({
+                title: `¿Eliminar al usuario ${u.name}?`,
+                confirmText: 'Eliminar',
+            })
+        ) {
             router.delete(`/usuarios/${u.id}`, { preserveScroll: true });
         }
     };
