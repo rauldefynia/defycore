@@ -41,6 +41,8 @@ return [
         'redirect' => env('MICROSOFT_REDIRECT_URI'),
         // Opcional: dominios de correo permitidos, separados por coma (ej. "heimtech.mx,defynia.mx").
         'allowed_domains' => array_filter(array_map('trim', explode(',', (string) env('MICROSOFT_ALLOWED_DOMAINS', '')))),
+        // Crea automáticamente (rol vendedor) a quien entra por primera vez. Sólo opera con tenant propio.
+        'auto_register' => env('MICROSOFT_AUTO_REGISTER', true),
         'scopes' => ['openid', 'profile', 'email', 'offline_access', 'User.Read', 'Mail.Send'],
     ],
 

@@ -130,15 +130,46 @@ class MicrosoftTest extends TestCase
             ->missing('auth.user.microsoft_refresh_token'));
     }
 
-    public function test_unknown_microsoft_account_is_rejected_and_no_user_is_created(): void
+    public function test_unknown_microsoft_account_is_auto_registered_as_seller(): void
     {
-        User::factory()->create(['email' => 'otro@heimtech.mx']);
+        $this->fakeMicrosoft(email: 'desconocido@heimtech.mx');
+
+        $this->runFlow()->assertRedirect('/dashboard');
+
+        $user = User::where('email', 'desconocido@heimtech.mx')->firstOrFail();
+        $this->assertSame(User::ROLE_SELLER, $user->role);
+        $this->assertTrue($user->active);
+        $this->assertSame('oid-123', $user->microsoft_id);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_auto_register_can_be_disabled(): void
+    {
+        config(['services.microsoft.auto_register' => false]);
         $this->fakeMicrosoft(email: 'desconocido@heimtech.mx');
 
         $this->runFlow()->assertRedirect('/login')->assertSessionHasErrors('email');
 
         $this->assertGuest();
-        $this->assertSame(1, User::count());
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_auto_register_respects_allowed_domains(): void
+    {
+        config(['services.microsoft.allowed_domains' => ['heimtech.mx']]);
+        $this->fakeMicrosoft(email: 'externo@otro.com');
+
+        $this->runFlow()->assertRedirect('/login');
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_generic_tenant_never_auto_registers(): void
+    {
+        config(['services.microsoft.tenant' => 'common']);
+        $this->fakeMicrosoft(email: 'nuevo@heimtech.mx');
+
+        $this->runFlow()->assertRedirect('/login');
+        $this->assertSame(0, User::count());
     }
 
     public function test_inactive_user_cannot_login_with_microsoft(): void

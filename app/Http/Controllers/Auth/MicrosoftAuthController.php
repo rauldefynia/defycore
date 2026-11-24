@@ -9,6 +9,7 @@ use App\Services\Microsoft\MicrosoftGraph;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /**
@@ -106,6 +107,11 @@ class MicrosoftAuthController extends Controller
             }
         }
 
+        // Autoregistro: sólo con tenant propio (el correo es de fiar) y dominio permitido.
+        if (! $user && $this->canAutoRegister($profile)) {
+            $user = $this->register($profile);
+        }
+
         if (! $user) {
             return $this->fail($request, 'Tu cuenta de Microsoft no tiene acceso a este sistema. Pide a un administrador que te dé de alta con tu correo.');
         }
@@ -127,6 +133,33 @@ class MicrosoftAuthController extends Controller
         $request->session()->put('auth_via_microsoft', true);
 
         return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    /** @param array{id: string, name: ?string, email: string} $profile */
+    private function canAutoRegister(array $profile): bool
+    {
+        return config('services.microsoft.auto_register')
+            && $this->microsoft->trustsEmail()
+            && $profile['email'] !== ''
+            && ! User::whereRaw('LOWER(email) = ?', [$profile['email']])->exists();
+    }
+
+    /** Alta automática como vendedor; el administrador puede cambiar su tipo después. */
+    private function register(array $profile): User
+    {
+        $user = new User;
+        $user->forceFill([
+            'name' => $profile['name'] ?: strstr($profile['email'], '@', true),
+            'email' => $profile['email'],
+            'role' => User::ROLE_SELLER,
+            'active' => true,
+            // Sin contraseña utilizable: entra siempre por Microsoft (o la restablece por correo).
+            'password' => Str::random(48),
+            'must_change_password' => false,
+            'email_verified_at' => now(),
+        ])->save();
+
+        return $user;
     }
 
     /** @param array{id: string, name: ?string, email: string} $profile */
